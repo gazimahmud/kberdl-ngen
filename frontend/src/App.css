@@ -956,6 +956,84 @@ a:hover { text-decoration: underline; }
   line-height: 1.5;
 }
 
+/* ── Notebook Viewer ── */
+.nbv-page {
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  font-family: var(--font-body, sans-serif);
+}
+.nbv-state {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 3rem 2rem; color: var(--kb-muted); font-size: 0.95rem;
+}
+.nbv-state--error { color: #dc2626; }
+
+.nbv-header { margin-bottom: 1.5rem; }
+.nbv-title-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin: 0.75rem 0 0.5rem;
+}
+.nbv-file-icon { color: var(--kb-blue); font-size: 1.1rem; }
+.nbv-title { font-size: 1.15rem; font-weight: 600; color: var(--kb-dark); margin: 0; font-family: var(--font-mono); }
+.nbv-meta-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.nbv-badge {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 99px; font-weight: 500;
+}
+.nbv-badge--kernel { background: #ede9fe; color: #6d28d9; }
+.nbv-badge--cells  { background: #f0fdf4; color: #15803d; }
+
+.nbv-cells { display: flex; flex-direction: column; gap: 0; }
+
+/* Markdown cell */
+.nbv-cell--md {
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  border-left: 3px solid transparent;
+}
+.nbv-cell--md:hover { border-left-color: #e2e8f0; }
+.nbv-md-body { font-size: 0.9rem; line-height: 1.65; color: #1e293b; }
+.nbv-md-body h1.nbv-hd { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.35rem; color: var(--kb-dark); }
+.nbv-md-body h2.nbv-hd { font-size: 1.1rem;  font-weight: 700; margin: 0.65rem 0 0.3rem;  color: var(--kb-dark); }
+.nbv-md-body h3.nbv-hd { font-size: 1rem;    font-weight: 600; margin: 0.5rem 0 0.25rem;  color: var(--kb-dark); }
+.nbv-md-body h4.nbv-hd { font-size: 0.9rem;  font-weight: 600; margin: 0.4rem 0 0.2rem;   color: var(--kb-dark); }
+.nbv-md-body li { margin-left: 1.25rem; margin-bottom: 0.15rem; }
+.nbv-md-body a  { color: var(--kb-blue); text-decoration: underline; }
+.nbv-md-body strong { font-weight: 600; }
+.nbv-icode {
+  font-family: var(--font-mono); font-size: 0.83em;
+  background: #f1f5f9; padding: 0.1em 0.35em; border-radius: 3px; color: #b45309;
+}
+
+/* Code cell */
+.nbv-cell--code {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin: 0.35rem 0;
+  overflow: hidden;
+}
+.nbv-in-row  { display: flex; align-items: flex-start; gap: 0; }
+.nbv-out-row { display: flex; align-items: flex-start; gap: 0; border-top: 1px solid #e2e8f0; }
+.nbv-prompt {
+  min-width: 4.5rem; text-align: right; padding: 0.55rem 0.6rem 0 0;
+  font-family: var(--font-mono); font-size: 0.72rem; color: #94a3b8;
+  user-select: none; flex-shrink: 0;
+}
+.nbv-prompt--out { color: #f97316; }
+.nbv-code-pre {
+  flex: 1; margin: 0; padding: 0.55rem 0.75rem 0.55rem 0;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word; overflow: visible;
+  background: transparent; color: #1e293b;
+}
+.nbv-output-pre {
+  flex: 1; margin: 0; padding: 0.45rem 0.75rem 0.45rem 0;
+  font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+  background: transparent; color: #374151; max-height: 300px; overflow-y: auto;
+}
+
 /* ── SQL Console ── */
 .sqlc-page {
   display: flex;
