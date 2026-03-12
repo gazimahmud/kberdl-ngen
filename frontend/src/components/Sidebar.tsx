@@ -236,7 +236,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               id:     `nb-${nb.path}`,
               label:  nb.name,
               icon:   "fa-solid fa-file-code",
-              path:   `/notebook?path=${encodeURIComponent(nb.path)}`,
+              path:   `/tenants/kbase/notebooks?path=${encodeURIComponent(nb.path)}`,
               isFile: true,
             })),
       };

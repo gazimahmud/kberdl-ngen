@@ -61,8 +61,13 @@ export const listNotebooks = async (_tenant: string, _username?: string): Promis
 };
 
 export const getNotebook = async (_tenant: string, path: string): Promise<Notebook> => {
-  await delay(200);
-  return { path, content: { nbformat: 4, cells: [] } };
+  // Fetch the real .ipynb file from the static assets served by Vite / GitHub Pages.
+  // import.meta.env.BASE_URL is "/" in dev and "/kberdl-ngen/" in production.
+  const url = `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+  const content = await res.json() as Record<string, unknown>;
+  return { path, content };
 };
 
 export const saveNotebook = async (
