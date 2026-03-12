@@ -57,7 +57,6 @@ export const getTenants = async (): Promise<string[]> => {
 };
 
 export const listNotebooks = async (_tenant: string, _username?: string): Promise<NotebookMeta[]> => {
-  await delay(250);
   return MOCK_NOTEBOOKS;
 };
 
