@@ -7,7 +7,7 @@ const TABS = [
   { id: "tenants",   label: "K-BERDL Tenants",           icon: "fa-solid fa-layer-group" },
   { id: "coscience", label: "KBase Co-Scientist",         icon: "fa-solid fa-brain" },
   { id: "mdf",       label: "KBase Research Observatory", icon: "fa-solid fa-microscope" },
-  { id: "feed",      label: "Data Intelligence Feed",     icon: "fa-solid fa-rss" },
+  { id: "feed",      label: "Knowledge Amplification Feed",     icon: "fa-solid fa-rss" },
 ];
 
 // Display names for tenants that need specific casing
@@ -1466,7 +1466,7 @@ function ObservatoryTab() {
   );
 }
 
-// ─────────────────────────── Data Intelligence Feed ──────────────────
+// ─────────────────────────── Knowledge Amplification Feed ──────────────────
 
 type FeedEventType = "ingest" | "annotation" | "discovery" | "schema" | "milestone" | "alert";
 
@@ -1662,7 +1662,7 @@ function DataIntelligenceFeed() {
       {/* Header */}
       <div className="dif-header">
         <div className="dif-header-left">
-          <h2 className="dif-title">Data Intelligence Feed</h2>
+          <h2 className="dif-title">Knowledge Amplification Feed</h2>
           <p className="dif-sub">Live activity across all K-BERDL lakehouse tenants</p>
         </div>
         <div className="dif-live">
