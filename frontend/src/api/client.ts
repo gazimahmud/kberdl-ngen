@@ -39,9 +39,9 @@ const MOCK_TENANTS = [
 ];
 
 const MOCK_NOTEBOOKS: NotebookMeta[] = [
-  { name: "pangenome_analysis.ipynb",    path: "kbase/admin/pangenome_analysis.ipynb",    size: 45231, last_modified: "2024-02-15T10:23:00Z" },
-  { name: "metabolomics_workflow.ipynb", path: "kbase/admin/metabolomics_workflow.ipynb",  size: 38420, last_modified: "2024-02-12T14:45:00Z" },
-  { name: "comparative_genomics.ipynb",  path: "kbase/admin/comparative_genomics.ipynb",   size: 52180, last_modified: "2024-02-08T09:12:00Z" },
+  { name: "pangenome_day1_EDA.ipynb",  path: "/notebooks/pangenome_day1_EDA.ipynb",  size: 989956, last_modified: "2024-02-15T10:23:00Z" },
+  { name: "ingest-parquet.ipynb",      path: "/notebooks/ingest-parquet.ipynb",      size: 43854,  last_modified: "2024-02-12T14:45:00Z" },
+  { name: "EDA_planetmicrobe.ipynb",   path: "/notebooks/EDA_planetmicrobe.ipynb",   size: 22086,  last_modified: "2024-02-08T09:12:00Z" },
 ];
 
 // ── Mock API ──────────────────────────────────────────────────────────────────
