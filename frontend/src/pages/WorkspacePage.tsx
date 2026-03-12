@@ -4,9 +4,10 @@ import MonacoEditor, { type OnMount } from "@monaco-editor/react";
 import { getTenants, type SqlResult } from "../api/client";
 
 const TABS = [
-  { id: "tenants",   label: "K-BERDL Tenants",          icon: "fa-solid fa-layer-group" },
-  { id: "coscience", label: "KBase Co-Scientist",        icon: "fa-solid fa-brain" },
+  { id: "tenants",   label: "K-BERDL Tenants",           icon: "fa-solid fa-layer-group" },
+  { id: "coscience", label: "KBase Co-Scientist",         icon: "fa-solid fa-brain" },
   { id: "mdf",       label: "KBase Research Observatory", icon: "fa-solid fa-microscope" },
+  { id: "feed",      label: "Data Intelligence Feed",     icon: "fa-solid fa-rss" },
 ];
 
 // Display names for tenants that need specific casing
@@ -1465,6 +1466,303 @@ function ObservatoryTab() {
   );
 }
 
+// ─────────────────────────── Data Intelligence Feed ──────────────────
+
+type FeedEventType = "ingest" | "annotation" | "discovery" | "schema" | "milestone" | "alert";
+
+interface FeedItem {
+  id: string;
+  type: FeedEventType;
+  tenant?: string;
+  tenantLabel?: string;
+  title: string;
+  detail: string;
+  ago: string;
+  tags?: string[];
+}
+
+const FEED_TYPE_META: Record<FeedEventType, { icon: string; color: string; label: string }> = {
+  ingest:      { icon: "fa-solid fa-upload",                color: "#3b82f6", label: "Data Load"       },
+  annotation:  { icon: "fa-solid fa-tag",                   color: "#10b981", label: "Annotation"      },
+  discovery:   { icon: "fa-solid fa-lightbulb",             color: "#f59e0b", label: "Discovery"       },
+  schema:      { icon: "fa-solid fa-table",                 color: "#8b5cf6", label: "Schema Update"   },
+  milestone:   { icon: "fa-solid fa-trophy",                color: "#f97316", label: "Milestone"       },
+  alert:       { icon: "fa-solid fa-triangle-exclamation",  color: "#ef4444", label: "Alert"           },
+};
+
+const FEED_ITEMS: FeedItem[] = [
+  {
+    id: "f01", type: "ingest", tenant: "enigma", tenantLabel: "ENIGMA",
+    title: "14,200 protein sequences ingested",
+    detail: "Batch ingest of sulfate-reducing bacterial proteomes from DOE JGI IMG/M completed. Tables `protein`, `feature`, and `kegg_pathway` updated.",
+    ago: "2 hours ago", tags: ["proteins", "JGI", "batch"],
+  },
+  {
+    id: "f02", type: "annotation", tenant: "nmdc", tenantLabel: "NMDC",
+    title: "GO term annotations refreshed for 8,300 features",
+    detail: "Gene Ontology terms updated using QuickGO 2025-Q4 release. Evidence codes upgraded from IEA to ISS for 1,240 high-confidence assignments.",
+    ago: "3 hours ago", tags: ["GO", "QuickGO"],
+  },
+  {
+    id: "f03", type: "discovery", tenantLabel: "KBase Co-Scientist",
+    title: "Sulfate-reduction pathway correlation identified across 47 Desulfovibrio genomes",
+    detail: "Co-Scientist cross-referenced ENIGMA sulfate reduction data with NMDC isolate genomes and found a conserved 11-gene operon (dsrAB cluster) present in 94% of samples — suggesting a shared horizontal gene transfer event.",
+    ago: "5 hours ago", tags: ["HGT", "dsrAB", "ENIGMA", "NMDC"],
+  },
+  {
+    id: "f04", type: "ingest", tenant: "planetmicrobe", tenantLabel: "PlanetMicrobe",
+    title: "780 ocean metagenomic samples loaded from TARA Oceans",
+    detail: "Paired-end sequencing reads processed through ATLAS 2.4 pipeline. Assembled contigs and predicted ORFs loaded into `sample`, `genome`, and `feature` tables.",
+    ago: "8 hours ago", tags: ["metagenomics", "TARA", "ocean"],
+  },
+  {
+    id: "f05", type: "schema", tenant: "enigma", tenantLabel: "ENIGMA",
+    title: "New table `sulfate_reduction_genes` added (12 columns)",
+    detail: "Schema extension to support the H₂S/sulfate reduction study. Includes columns for gene cluster ID, dsr subunit type, operon position, and predicted redox potential.",
+    ago: "12 hours ago", tags: ["DDL", "sulfate"],
+  },
+  {
+    id: "f06", type: "milestone", tenantLabel: "K-BERDL Platform",
+    title: "10 TB of scientific data now managed across all tenants",
+    detail: "Combined storage across 16 active tenants crossed the 10 TB threshold. KBase (3.2 TB), NMDC (2.3 TB), and PhageFoundry (1.8 TB) are the top three contributors.",
+    ago: "1 day ago", tags: ["storage", "platform"],
+  },
+  {
+    id: "f07", type: "annotation", tenant: "microbdiscoveryforge", tenantLabel: "MicrobDiscoveryForge",
+    title: "KEGG pathway completeness recalculated for 3,100 genomes",
+    detail: "Using HMM profiles from KEGG release 109.0. Average pathway completeness increased from 61% to 68% after re-annotation with updated KOfam models.",
+    ago: "1 day ago", tags: ["KEGG", "HMM", "KOfam"],
+  },
+  {
+    id: "f08", type: "ingest", tenant: "phagefoundry", tenantLabel: "PhageFoundry",
+    title: "2,400 phage protein clusters loaded from PHROGs database",
+    detail: "PHROGs v4 (Phage pROteins with HIerarchical Groups) integrated. Functional annotations now available for tail fiber, baseplate, and lysins across all phage genomes.",
+    ago: "1 day ago", tags: ["PHROGs", "phage", "proteins"],
+  },
+  {
+    id: "f09", type: "discovery", tenantLabel: "KBase Co-Scientist",
+    title: "Novel host-range determinant detected in PhageFoundry tail fiber proteins",
+    detail: "Structural similarity search against AlphaFold DB identified a 140-residue receptor-binding domain in 38 phages not previously catalogued. Predicted to bind LPS O-antigen variants in Pseudomonas aeruginosa.",
+    ago: "1 day ago", tags: ["AlphaFold", "PhageFoundry", "RBD"],
+  },
+  {
+    id: "f10", type: "ingest", tenant: "nmdc", tenantLabel: "NMDC",
+    title: "Soil metagenome data from 120 NEON terrestrial sites ingested",
+    detail: "Paired metagenome and metatranscriptome data from NEON Phase-II sampling campaign. 14.6 billion paired reads processed; 890,000 predicted proteins loaded.",
+    ago: "2 days ago", tags: ["NEON", "soil", "metatranscriptome"],
+  },
+  {
+    id: "f11", type: "schema", tenant: "ideas", tenantLabel: "IDEAS",
+    title: "Schema extended: `metabolite` table gains 3 HMDB columns",
+    detail: "Added `hmdb_id`, `hmdb_class`, and `hmdb_sub_class` to the metabolite table to align with Human Metabolome Database v5.0. 22,000 existing rows back-filled.",
+    ago: "2 days ago", tags: ["HMDB", "metabolomics", "DDL"],
+  },
+  {
+    id: "f12", type: "discovery", tenantLabel: "KBase Co-Scientist",
+    title: "Cross-tenant core genome overlap: ENIGMA and NMDC sulfate reducers share 89%",
+    detail: "Pangenome analysis spanning 180 genomes from two independent DOE projects reveals unexpectedly high core genome conservation — challenging the assumption of habitat-specific divergence in sulfate-reducing bacteria.",
+    ago: "2 days ago", tags: ["pangenome", "ENIGMA", "NMDC", "cross-tenant"],
+  },
+  {
+    id: "f13", type: "annotation", tenant: "aile", tenantLabel: "AIAle",
+    title: "5,200 CDS features re-annotated using updated NCBI RefSeq models",
+    detail: "Prokka v1.14.6 re-run with RefSeq 2025-01 protein database. 840 previously hypothetical proteins now have functional assignments; 12 genes reclassified as pseudogenes.",
+    ago: "3 days ago", tags: ["Prokka", "RefSeq", "CDS"],
+  },
+  {
+    id: "f14", type: "ingest", tenant: "pnnlsoil", tenantLabel: "PnnlSoil",
+    title: "450 soil core samples with 16S rRNA amplicon data loaded",
+    detail: "QIIME2 2024.5 amplicon pipeline outputs ingested. OTU table, taxonomy assignments, and alpha/beta diversity metrics available in `sample` and `taxonomy` tables.",
+    ago: "3 days ago", tags: ["16S", "QIIME2", "amplicon"],
+  },
+  {
+    id: "f15", type: "alert", tenant: "enigma", tenantLabel: "ENIGMA",
+    title: "Duplicate sample IDs detected in `biosample` — 12 records flagged",
+    detail: "Data quality check identified 12 biosample entries with conflicting metadata originating from two independent field campaigns. Records quarantined pending curator review.",
+    ago: "3 days ago", tags: ["data-quality", "quarantine"],
+  },
+  {
+    id: "f16", type: "milestone", tenant: "kbase", tenantLabel: "KBase",
+    title: "620 tables across 18 databases fully indexed for Trino query",
+    detail: "Iceberg metadata synchronisation complete. All tables now queryable from the Trino SQL console with partition pruning and column-level statistics available.",
+    ago: "4 days ago", tags: ["Trino", "Iceberg", "indexing"],
+  },
+  {
+    id: "f17", type: "discovery", tenant: "planetmicrobe", tenantLabel: "PlanetMicrobe",
+    title: "34 novel MAGs linked to sulfur cycle enzymes absent from reference DBs",
+    detail: "Co-Scientist screened 5,000+ MAGs assembled from TARA ocean samples using custom HMM profiles. The 34 high-quality bins represent potentially undescribed lineages in the Gammaproteobacteria.",
+    ago: "4 days ago", tags: ["MAGs", "sulfur-cycle", "novel"],
+  },
+  {
+    id: "f18", type: "ingest", tenant: "globalusers", tenantLabel: "GlobalUsers",
+    title: "User-submitted genome batch (340 genomes) processed and loaded",
+    detail: "Community submission from the KBase public workspace pipeline. Genomes passed CheckM2 quality thresholds (completeness >90%, contamination <5%) and are now available for cross-tenant queries.",
+    ago: "5 days ago", tags: ["community", "CheckM2", "batch"],
+  },
+  {
+    id: "f19", type: "annotation", tenant: "kessence", tenantLabel: "KeScience",
+    title: "Protein domain hits updated with Pfam 35.0 — 18,000 features affected",
+    detail: "InterProScan 5.65 re-run against Pfam 35.0 (19,632 families). 18,000 features gained new or updated domain annotations; 2,100 features lost obsolete Pfam-A entries.",
+    ago: "5 days ago", tags: ["Pfam", "InterProScan", "domains"],
+  },
+  {
+    id: "f20", type: "schema", tenant: "asymbio", tenantLabel: "Asymbio",
+    title: "New database `synthetic_circuits` created with 8 tables",
+    detail: "Schema provisioned for synthetic biology circuit data: `part`, `device`, `assembly`, `characterisation`, `model`, `experiment`, `strain`, and `measurement`.",
+    ago: "6 days ago", tags: ["synthetic-bio", "DDL", "new-db"],
+  },
+  {
+    id: "f21", type: "ingest", tenant: "bravebread", tenantLabel: "BraveBread",
+    title: "Fermentation metabolomics data (900 samples) ingested from LC-MS pipeline",
+    detail: "Untargeted LC-MS/MS data from time-series fermentation experiments processed through MZmine 3. 4,200 features detected; 890 annotated against HMDB and KEGG compound databases.",
+    ago: "6 days ago", tags: ["LC-MS", "metabolomics", "MZmine"],
+  },
+  {
+    id: "f22", type: "alert", tenant: "usgis", tenantLabel: "USGIS",
+    title: "Query timeout anomaly in `soil_carbon` table — index rebuild scheduled",
+    detail: "Automated query monitor detected p95 latency spike from 340 ms to 12.4 s over a 6-hour window. Root cause identified as stale Iceberg table statistics. Rebuild job queued for off-peak window.",
+    ago: "7 days ago", tags: ["performance", "Iceberg", "maintenance"],
+  },
+  {
+    id: "f23", type: "discovery", tenantLabel: "KBase Co-Scientist",
+    title: "Predicted antibiotic resistance gene transfer hotspot in 12 KBase draft genomes",
+    detail: "Genomic island analysis (IslandPath-DIMOB) combined with ARG annotation (CARD 3.2) identified a 42 kb mobile element carrying 7 AMR genes flanked by IS3-family transposons in 12 closely related draft assemblies.",
+    ago: "7 days ago", tags: ["AMR", "CARD", "mobile-elements", "KBase"],
+  },
+];
+
+const FEED_FILTER_OPTIONS: { id: FeedEventType | "all"; label: string }[] = [
+  { id: "all",        label: "All Events"     },
+  { id: "ingest",     label: "Data Loads"     },
+  { id: "annotation", label: "Annotations"    },
+  { id: "discovery",  label: "Discoveries"    },
+  { id: "schema",     label: "Schema Updates" },
+  { id: "milestone",  label: "Milestones"     },
+  { id: "alert",      label: "Alerts"         },
+];
+
+function DataIntelligenceFeed() {
+  const [filter, setFilter] = useState<FeedEventType | "all">("all");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const visible = filter === "all" ? FEED_ITEMS : FEED_ITEMS.filter((f) => f.type === filter);
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const countFor = (id: FeedEventType | "all") =>
+    id === "all" ? FEED_ITEMS.length : FEED_ITEMS.filter((f) => f.type === id).length;
+
+  return (
+    <div className="dif-page">
+      {/* Header */}
+      <div className="dif-header">
+        <div className="dif-header-left">
+          <h2 className="dif-title">Data Intelligence Feed</h2>
+          <p className="dif-sub">Live activity across all K-BERDL lakehouse tenants</p>
+        </div>
+        <div className="dif-live">
+          <span className="dif-live-dot" />
+          Live
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="dif-filters">
+        {FEED_FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            className={`dif-filter-btn${filter === opt.id ? " dif-filter-btn--active" : ""}${opt.id !== "all" ? ` dif-filter-btn--${opt.id}` : ""}`}
+            onClick={() => setFilter(opt.id)}
+          >
+            {opt.id !== "all" && <i className={`${FEED_TYPE_META[opt.id as FeedEventType].icon} dif-filter-icon`} />}
+            {opt.label}
+            <span className="dif-filter-count">{countFor(opt.id)}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Feed list */}
+      <div className="dif-list">
+        {visible.map((item, idx) => {
+          const meta    = FEED_TYPE_META[item.type];
+          const isExp   = expanded.has(item.id);
+          const tenantColor = item.tenant ? (TENANT_COLORS[item.tenant] ?? "#607d8b") : "#6b7280";
+
+          return (
+            <div key={item.id} className={`dif-item${isExp ? " dif-item--expanded" : ""}`}>
+              {/* Timeline connector */}
+              <div className="dif-timeline">
+                <div className="dif-icon-wrap" style={{ background: meta.color + "1a", border: `2px solid ${meta.color}` }}>
+                  <i className={`${meta.icon} dif-icon`} style={{ color: meta.color }} />
+                </div>
+                {idx < visible.length - 1 && <div className="dif-connector" />}
+              </div>
+
+              {/* Content */}
+              <div className="dif-content">
+                <div className="dif-content-top">
+                  <div className="dif-meta-row">
+                    <span className="dif-type-badge" style={{ background: meta.color + "18", color: meta.color }}>
+                      {meta.label}
+                    </span>
+                    {item.tenant && (
+                      <span className="dif-tenant-badge" style={{ background: tenantColor + "18", color: tenantColor }}>
+                        <span className="dif-tenant-dot" style={{ background: tenantColor }} />
+                        {item.tenantLabel}
+                      </span>
+                    )}
+                    {!item.tenant && item.tenantLabel && (
+                      <span className="dif-tenant-badge dif-tenant-badge--platform">
+                        <i className="fa-solid fa-microchip dif-tenant-dot-icon" />
+                        {item.tenantLabel}
+                      </span>
+                    )}
+                    <span className="dif-ago">
+                      <i className="fa-regular fa-clock" /> {item.ago}
+                    </span>
+                  </div>
+
+                  <p className="dif-item-title">{item.title}</p>
+
+                  <p className={`dif-item-detail${isExp ? "" : " dif-item-detail--clamp"}`}>
+                    {item.detail}
+                  </p>
+
+                  <div className="dif-item-footer">
+                    {item.tags && (
+                      <div className="dif-tags">
+                        {item.tags.map((tag) => (
+                          <span key={tag} className="dif-tag">#{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                    <button className="dif-expand-btn" onClick={() => toggleExpand(item.id)}>
+                      {isExp ? "Show less" : "Show more"}
+                      <i className={`fa-solid fa-chevron-${isExp ? "up" : "down"}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {visible.length === 0 && (
+          <div className="dif-empty">
+            <i className="fa-solid fa-inbox" />
+            <p>No events match this filter.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────── WorkspacePage ───────────────────────────
 
 export default function WorkspacePage() {
@@ -1557,6 +1855,8 @@ export default function WorkspacePage() {
       {activeTab === "coscience" && <CoScientistChat />}
 
       {activeTab === "mdf" && <ObservatoryTab />}
+
+      {activeTab === "feed" && <DataIntelligenceFeed />}
     </div>
   );
 }
