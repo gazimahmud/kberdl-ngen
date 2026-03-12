@@ -1,6 +1,5 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api/client";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -13,18 +12,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    try {
-      const res = await apiClient.post<{ token: string; username: string; tenants: string[] }>(
-        "/api/auth/login",
-        { username, password }
-      );
-      localStorage.setItem("token", res.data.token);
+    // Mock auth — accept any non-empty credentials for the PoC demo
+    await new Promise((r) => setTimeout(r, 600));
+    if (username.trim() && password.trim()) {
+      localStorage.setItem("token", `mock-token-${username}`);
       navigate("/");
-    } catch {
-      setError("Invalid username or password.");
-    } finally {
-      setLoading(false);
+    } else {
+      setError("Please enter a username and password.");
     }
+    setLoading(false);
   };
 
   return (
