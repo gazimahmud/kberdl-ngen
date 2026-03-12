@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MonacoEditor, { type OnMount } from "@monaco-editor/react";
-import { getTenants, executeSql, type SqlResult } from "../api/client";
+import { getTenants, type SqlResult } from "../api/client";
 
 const TABS = [
   { id: "tenants",   label: "K-BERDL Tenants",          icon: "fa-solid fa-layer-group" },

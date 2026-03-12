@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import WorkspacePage from "./pages/WorkspacePage";
@@ -6,7 +7,7 @@ import NotebookPage from "./pages/NotebookPage";
 import Layout from "./components/Layout";
 import "./App.css";
 
-function RequireAuth({ children }: { children: JSX.Element }) {
+function RequireAuth({ children }: { children: ReactNode }) {
   const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/login" replace />;
 }

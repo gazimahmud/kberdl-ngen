@@ -66,7 +66,11 @@ export const getNotebook = async (_tenant: string, path: string): Promise<Notebo
   return { path, content: { nbformat: 4, cells: [] } };
 };
 
-export const saveNotebook = async (): Promise<void> => {
+export const saveNotebook = async (
+  _tenant: string,
+  _path: string,
+  _content: Record<string, unknown>,
+): Promise<void> => {
   await delay(100);
 };
 
@@ -75,7 +79,7 @@ export const startKernel = async (_tenant: string): Promise<{ kernel_id: string;
   return { kernel_id: "mock-kernel-id", kernel_name: "python3" };
 };
 
-export const interruptKernel = async (): Promise<void> => {
+export const interruptKernel = async (_tenant: string, _kernelId: string): Promise<void> => {
   await delay(100);
 };
 
