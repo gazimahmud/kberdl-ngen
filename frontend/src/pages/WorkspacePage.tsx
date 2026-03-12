@@ -1240,7 +1240,7 @@ function CoScientistChat() {
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <img src="/kberdl-logo.png" alt="KBase Co-Scientist" className="chat-logo-img" />
+            <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="KBase Co-Scientist" className="chat-logo-img" />
             <h2>KBase Co-Scientist</h2>
             <p>Your AI assistant for biological data analysis and scientific discovery.</p>
             <div className="chat-suggestions">
@@ -1271,7 +1271,7 @@ function CoScientistChat() {
               <div key={msg.id} className={`chat-msg chat-msg--${msg.role}`}>
                 {msg.role === "assistant" && (
                   <div className="chat-avatar">
-                    <img src="/kberdl-logo.png" alt="" className="chat-avatar-img" />
+                    <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
                   </div>
                 )}
                 <div className="chat-bubble">{msg.content}</div>
@@ -1280,7 +1280,7 @@ function CoScientistChat() {
             {thinking && (
               <div className="chat-msg chat-msg--assistant">
                 <div className="chat-avatar">
-                  <img src="/kberdl-logo.png" alt="" className="chat-avatar-img" />
+                  <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
                 </div>
                 <div className="chat-bubble chat-bubble--thinking">
                   <span /><span /><span />
