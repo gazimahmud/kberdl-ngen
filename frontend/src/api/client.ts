@@ -39,9 +39,10 @@ const MOCK_TENANTS = [
 ];
 
 const MOCK_NOTEBOOKS: NotebookMeta[] = [
-  { name: "pangenome_day1_EDA.ipynb",  path: "/notebooks/pangenome_day1_EDA.ipynb",  size: 989956, last_modified: "2024-02-15T10:23:00Z" },
-  { name: "ingest-parquet.ipynb",      path: "/notebooks/ingest-parquet.ipynb",      size: 43854,  last_modified: "2024-02-12T14:45:00Z" },
-  { name: "EDA_planetmicrobe.ipynb",   path: "/notebooks/EDA_planetmicrobe.ipynb",   size: 22086,  last_modified: "2024-02-08T09:12:00Z" },
+  { name: "pangenome_day1_EDA.ipynb",        path: "/notebooks/pangenome_day1_EDA.ipynb",        size: 989956, last_modified: "2024-02-15T10:23:00Z" },
+  { name: "ingest-parquet.ipynb",            path: "/notebooks/ingest-parquet.ipynb",            size: 43854,  last_modified: "2024-02-12T14:45:00Z" },
+  { name: "EDA_planetmicrobe.ipynb",         path: "/notebooks/EDA_planetmicrobe.ipynb",         size: 22086,  last_modified: "2024-02-08T09:12:00Z" },
+  { name: "04_h2s_sulfate_reduction.ipynb",  path: "/notebooks/04_h2s_sulfate_reduction.ipynb",  size: 676864, last_modified: "2025-03-12T00:00:00Z" },
 ];
 
 // ── Mock API ──────────────────────────────────────────────────────────────────
