@@ -1,0 +1,48 @@
+services:
+
+  backend:
+    build: ./backend
+    container_name: kberdl_backend
+    ports:
+      - "8000:8000"
+    environment:
+      JUPYTERHUB_URL: http://jupyterhub:8000
+      JUPYTERHUB_API_TOKEN: ${JUPYTERHUB_API_TOKEN}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_SECURE: "false"
+      MINIO_NOTEBOOKS_BUCKET: notebooks
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:-change-me}
+      CORS_ORIGINS: '["http://localhost:5173"]'
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - minio
+
+  frontend:
+    build: ./frontend
+    container_name: kberdl_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  minio:
+    image: minio/minio:latest
+    container_name: kberdl_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  minio_data:
