@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MonacoEditor, { type OnMount } from "@monaco-editor/react";
+import Anthropic from "@anthropic-ai/sdk";
 import { getTenants, type SqlResult } from "../api/client";
 
 const TABS = [
@@ -1165,16 +1166,126 @@ const SUGGESTIONS = [
 
 // ─────────────────────────── CoScientistChat ─────────────────────────
 
+const STORAGE_KEY = "kberdl_anthropic_key";
+
+const SYSTEM_PROMPT = `You are KBase Co-Scientist, an expert AI assistant embedded in the KBase BER Data Lakehouse (K-BERDL) platform. You help scientists analyze biological data stored across multiple research tenants including ENIGMA, NMDC, PlanetMicrobe, PhageFoundry, MicrobDiscoveryForge, and others.
+
+Your expertise covers:
+- Microbial genomics, metagenomics, and pangenomics
+- Metabolomics and biochemical pathway analysis
+- Bioinformatics workflows (KEGG, GO, Pfam, NCBI databases)
+- SQL queries against Trino/Iceberg data lakehouse tables
+- Scientific interpretation of omics data
+
+Be concise, scientifically precise, and proactive about suggesting relevant analyses or queries the user could run against their tenant data.`;
+
+function ApiKeyGate({ onConnect }: { onConnect: (key: string) => void }) {
+  const [key, setKey]       = useState("");
+  const [show, setShow]     = useState(false);
+  const [error, setError]   = useState("");
+  const [testing, setTesting] = useState(false);
+
+  const handleConnect = async () => {
+    const trimmed = key.trim();
+    if (!trimmed.startsWith("sk-ant-")) {
+      setError("Key should start with sk-ant-  — check and try again.");
+      return;
+    }
+    setTesting(true);
+    setError("");
+    try {
+      // Minimal test call to verify the key works
+      const client = new Anthropic({ apiKey: trimmed, dangerouslyAllowBrowser: true });
+      await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8,
+        messages: [{ role: "user", content: "hi" }],
+      });
+      sessionStorage.setItem(STORAGE_KEY, trimmed);
+      onConnect(trimmed);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg.includes("401") ? "Invalid API key — authentication failed." : `Error: ${msg}`);
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="chat-page">
+      <div className="chat-messages">
+        <div className="apikey-gate">
+          <div className="apikey-gate-icon">
+            <i className="fa-solid fa-key" />
+          </div>
+          <h2 className="apikey-gate-title">Connect your Claude API key</h2>
+          <p className="apikey-gate-sub">
+            Your key is stored only in <strong>sessionStorage</strong> and is cleared
+            when you close this tab. It is sent directly to{" "}
+            <code>api.anthropic.com</code> — never to any intermediate server.
+          </p>
+
+          <div className="apikey-input-row">
+            <div className="apikey-input-wrap">
+              <input
+                type={show ? "text" : "password"}
+                className="apikey-input"
+                placeholder="sk-ant-api03-…"
+                value={key}
+                onChange={(e) => { setKey(e.target.value); setError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && handleConnect()}
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <button className="apikey-eye-btn" onClick={() => setShow((s) => !s)} title={show ? "Hide" : "Show"}>
+                <i className={`fa-solid ${show ? "fa-eye-slash" : "fa-eye"}`} />
+              </button>
+            </div>
+            <button
+              className="apikey-connect-btn"
+              onClick={handleConnect}
+              disabled={!key.trim() || testing}
+            >
+              {testing
+                ? <><i className="fa-solid fa-circle-notch fa-spin" /> Verifying…</>
+                : <><i className="fa-solid fa-plug" /> Connect</>}
+            </button>
+          </div>
+
+          {error && (
+            <p className="apikey-error">
+              <i className="fa-solid fa-circle-exclamation" /> {error}
+            </p>
+          )}
+
+          <p className="apikey-hint">
+            <i className="fa-solid fa-circle-info" />{" "}
+            Get a key at{" "}
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
+              console.anthropic.com
+            </a>
+            . We recommend setting a <strong>spending cap</strong> before use.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CoScientistChat() {
+  const [apiKey, setApiKey]     = useState<string | null>(
+    () => sessionStorage.getItem(STORAGE_KEY)
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [input, setInput]       = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef    = useRef<AbortController | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, thinking]);
+  }, [messages, streaming]);
 
   const autoResize = () => {
     const ta = textareaRef.current;
@@ -1183,27 +1294,67 @@ function CoScientistChat() {
     ta.style.height = Math.min(ta.scrollHeight, 220) + "px";
   };
 
-  const handleSend = () => {
-    if (!input.trim() || thinking) return;
+  const handleDisconnect = () => {
+    abortRef.current?.abort();
+    sessionStorage.removeItem(STORAGE_KEY);
+    setApiKey(null);
+    setMessages([]);
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || streaming || !apiKey) return;
+
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: input.trim() };
-    setMessages((prev) => [...prev, userMsg]);
+    const allMessages = [...messages, userMsg];
+    setMessages(allMessages);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    setThinking(true);
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content:
-            "I'm KBase Co-Scientist, your AI assistant for biological data analysis. " +
-            "Full integration with the K-BERDL data lakehouse is coming soon — I'll help you " +
-            "analyze genomic data, run scientific queries, and accelerate your research workflows.",
-        },
-      ]);
-      setThinking(false);
-    }, 1400);
+    setStreaming(true);
+
+    const assistantId = crypto.randomUUID();
+    setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+
+    const abort = new AbortController();
+    abortRef.current = abort;
+
+    try {
+      const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+      const stream = client.messages.stream({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: allMessages.map(({ role, content }) => ({ role, content })),
+      });
+
+      for await (const chunk of stream) {
+        if (abort.signal.aborted) break;
+        if (
+          chunk.type === "content_block_delta" &&
+          chunk.delta.type === "text_delta"
+        ) {
+          const delta = chunk.delta.text;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, content: m.content + delta } : m
+            )
+          );
+        }
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error && e.name !== "AbortError"
+        ? `Error: ${e.message}`
+        : "";
+      if (msg) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: msg } : m
+          )
+        );
+      }
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1212,6 +1363,8 @@ function CoScientistChat() {
       handleSend();
     }
   };
+
+  if (!apiKey) return <ApiKeyGate onConnect={setApiKey} />;
 
   const inputBox = (
     <div className="chat-input-box">
@@ -1223,11 +1376,12 @@ function CoScientistChat() {
         rows={3}
         onChange={(e) => { setInput(e.target.value); autoResize(); }}
         onKeyDown={handleKeyDown}
+        disabled={streaming}
       />
       <button
         className="chat-send-btn"
         onClick={handleSend}
-        disabled={!input.trim() || thinking}
+        disabled={!input.trim() || streaming}
         title="Send (Enter)"
       >
         <i className="fa-solid fa-arrow-up" />
@@ -1237,6 +1391,17 @@ function CoScientistChat() {
 
   return (
     <div className="chat-page">
+      {/* Key status bar */}
+      <div className="chat-key-bar">
+        <span className="chat-key-status">
+          <i className="fa-solid fa-circle-check" /> Claude API connected
+        </span>
+        <span className="chat-key-model">claude-sonnet-4-6</span>
+        <button className="chat-disconnect-btn" onClick={handleDisconnect} title="Disconnect API key">
+          <i className="fa-solid fa-plug-circle-xmark" /> Disconnect
+        </button>
+      </div>
+
       {/* Messages */}
       <div className="chat-messages">
         {messages.length === 0 ? (
@@ -1249,16 +1414,12 @@ function CoScientistChat() {
                 <button
                   key={i}
                   className="chat-suggestion"
-                  onClick={() => {
-                    setInput(s);
-                    textareaRef.current?.focus();
-                  }}
+                  onClick={() => { setInput(s); textareaRef.current?.focus(); }}
                 >
                   {s}
                 </button>
               ))}
             </div>
-            {/* Input sits right below suggestions in the empty state */}
             <div className="chat-input-wrap chat-input-wrap--inline">
               {inputBox}
               <p className="chat-disclaimer">
@@ -1275,25 +1436,19 @@ function CoScientistChat() {
                     <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
                   </div>
                 )}
-                <div className="chat-bubble">{msg.content}</div>
+                <div className="chat-bubble">
+                  {msg.content}
+                  {streaming && msg.role === "assistant" && msg === messages[messages.length - 1] && (
+                    <span className="chat-cursor" />
+                  )}
+                </div>
               </div>
             ))}
-            {thinking && (
-              <div className="chat-msg chat-msg--assistant">
-                <div className="chat-avatar">
-                  <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
-                </div>
-                <div className="chat-bubble chat-bubble--thinking">
-                  <span /><span /><span />
-                </div>
-              </div>
-            )}
             <div ref={bottomRef} />
           </div>
         )}
       </div>
 
-      {/* Input bar — only rendered once a conversation starts */}
       {messages.length > 0 && (
         <div className="chat-input-wrap">
           {inputBox}
