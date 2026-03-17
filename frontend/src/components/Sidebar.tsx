@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { getTenants, listNotebooks, type NotebookMeta } from "../api/client";
+import { PROJECTS_BY_TENANT } from "../pages/KnowledgeDashboardPage";
 
 // Matches WorkspacePage so labels are consistent
 const DISPLAY_NAMES: Record<string, string> = {
@@ -293,10 +294,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             path:  `/?tab=tenants&console=${t}`,
           },
           {
-            id:    `tenant-${t}-projects`,
-            label: "Projects",
-            icon:  "fa-solid fa-diagram-project",
-            path:  `/tenants/${t}`,
+            id:       `tenant-${t}-projects`,
+            label:    "Projects",
+            icon:     "fa-solid fa-diagram-project",
+            path:     "/projects",
+            navigable: true,
+            children: (PROJECTS_BY_TENANT[t] ?? []).map((p) => ({
+              id:    `tenant-${t}-proj-${p.id}`,
+              label: p.title,
+              icon:  "fa-solid fa-flask",
+              path:  `/projects/${p.id}`,
+            })),
           },
         ],
       })),

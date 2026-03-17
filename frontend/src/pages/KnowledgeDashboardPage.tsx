@@ -543,6 +543,16 @@ const PROJECTS: ProjectData[] = [
 
 const PROJECT_MAP = Object.fromEntries(PROJECTS.map((p) => [p.id, p]));
 
+// ── Tenant → project index (consumed by Sidebar) ─────────────────────
+
+export const PROJECTS_BY_TENANT: Record<string, { id: string; title: string }[]> =
+  PROJECTS.reduce<Record<string, { id: string; title: string }[]>>((acc, p) => {
+    for (const t of p.tenants) {
+      (acc[t] ??= []).push({ id: p.id, title: p.title });
+    }
+    return acc;
+  }, {});
+
 // ── Category icon map ─────────────────────────────────────────────────
 
 const CATEGORY_ICONS: Record<string, string> = {
