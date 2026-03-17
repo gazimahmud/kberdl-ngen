@@ -295,7 +295,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           },
           {
             id:       `tenant-${t}-projects`,
-            label:    "Project Catalog",
+            label:    "Discovery Catalog",
             icon:     "fa-solid fa-diagram-project",
             path:     "/projects",
             navigable: true,
