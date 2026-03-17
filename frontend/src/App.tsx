@@ -5,6 +5,7 @@ import WorkspacePage from "./pages/WorkspacePage";
 import TenantPage from "./pages/TenantPage";
 import NotebookPage from "./pages/NotebookPage";
 import NotebookViewerPage from "./pages/NotebookViewerPage";
+import KnowledgeDashboardPage, { ProjectListPage } from "./pages/KnowledgeDashboardPage";
 import Layout from "./components/Layout";
 import "./App.css";
 
@@ -29,6 +30,8 @@ function App() {
           <Route path="/notebook" element={<NotebookViewerPage />} />
           <Route path="/tenants/:tenant" element={<TenantPage />} />
           <Route path="/tenants/:tenant/notebooks" element={<NotebookPage />} />
+          <Route path="/projects" element={<ProjectListPage />} />
+          <Route path="/projects/:projectId" element={<KnowledgeDashboardPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
       </Routes>
