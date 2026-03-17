@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MonacoEditor, { type OnMount } from "@monaco-editor/react";
 import Anthropic from "@anthropic-ai/sdk";
@@ -1179,10 +1179,24 @@ Your expertise covers:
 
 Be concise, scientifically precise, and proactive about suggesting relevant analyses or queries the user could run against their tenant data.`;
 
+function friendlyApiError(e: unknown): ReactNode {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg.includes("credit balance") || msg.includes("402") || msg.includes("credit")) {
+    return <>
+      Insufficient credits.{" "}
+      <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener noreferrer">
+        Add credits at console.anthropic.com →
+      </a>
+    </>;
+  }
+  if (msg.includes("401")) return "Invalid API key — authentication failed.";
+  return `Error: ${msg}`;
+}
+
 function ApiKeyGate({ onConnect }: { onConnect: (key: string) => void }) {
-  const [key, setKey]       = useState("");
-  const [show, setShow]     = useState(false);
-  const [error, setError]   = useState("");
+  const [key, setKey]         = useState("");
+  const [show, setShow]       = useState(false);
+  const [error, setError]     = useState<ReactNode>("");
   const [testing, setTesting] = useState(false);
 
   const handleConnect = async () => {
@@ -1204,8 +1218,7 @@ function ApiKeyGate({ onConnect }: { onConnect: (key: string) => void }) {
       sessionStorage.setItem(STORAGE_KEY, trimmed);
       onConnect(trimmed);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg.includes("401") ? "Invalid API key — authentication failed." : `Error: ${msg}`);
+      setError(friendlyApiError(e));
     } finally {
       setTesting(false);
     }
@@ -1341,16 +1354,16 @@ function CoScientistChat() {
         }
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error && e.name !== "AbortError"
-        ? `Error: ${e.message}`
-        : "";
-      if (msg) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId ? { ...m, content: msg } : m
-          )
-        );
-      }
+      if (e instanceof Error && e.name === "AbortError") { /* user disconnected */ return; }
+      const raw = e instanceof Error ? e.message : String(e);
+      const msg = (raw.includes("credit balance") || raw.includes("credit") || raw.includes("402"))
+        ? "Insufficient credits — please add credits at:\nhttps://console.anthropic.com/settings/billing"
+        : raw.includes("401")
+        ? "Invalid API key — authentication failed."
+        : `Error: ${raw}`;
+      setMessages((prev) =>
+        prev.map((m) => m.id === assistantId ? { ...m, content: msg } : m)
+      );
     } finally {
       setStreaming(false);
       abortRef.current = null;
