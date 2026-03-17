@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { getTenants, listNotebooks, type NotebookMeta } from "../api/client";
 
 // Matches WorkspacePage so labels are consistent
@@ -51,6 +51,7 @@ interface NavItem {
   icon: string;
   iconOpen?: string;
   path?: string;
+  navigable?: boolean;  // when true with children: label navigates, chevron toggles
   isFile?: boolean;
   color?: string;
   children?: NavItem[];
@@ -70,6 +71,7 @@ const STATIC_ITEMS: NavItem[] = [
     label: "My Projects",
     icon: "fa-solid fa-diagram-project",
     path: "/projects",
+    navigable: true,
     children: [
       { id: "proj-acinetobacter_adp1_explorer",              label: "ADP1 Data Explorer",                 icon: "fa-solid fa-layer-group",  path: "/projects/acinetobacter_adp1_explorer" },
       { id: "proj-adp1_deletion_phenotypes",                 label: "ADP1 Deletion Phenotypes",           icon: "fa-solid fa-flask",         path: "/projects/adp1_deletion_phenotypes" },
@@ -125,6 +127,7 @@ interface NavNodeProps {
 }
 
 function NavNode({ item, depth, expanded, toggle, collapsed }: NavNodeProps) {
+  const location = useLocation();
   // ── Collapsed sidebar: only top-level items, icon + tooltip only ──
   if (collapsed) {
     if (depth > 0) return null;
@@ -165,19 +168,32 @@ function NavNode({ item, depth, expanded, toggle, collapsed }: NavNodeProps) {
   }
 
   if (hasChildren) {
+    const isActive = item.navigable && item.path && location.pathname === item.path;
     return (
       <div className="nav-group">
         <div
-          className={`nav-item ${depth === 0 ? "nav-item--top" : "nav-item--subfolder"}`}
+          className={`nav-item ${depth === 0 ? "nav-item--top" : "nav-item--subfolder"}${isActive ? " nav-item--active" : ""}`}
           style={{ paddingLeft }}
-          onClick={() => toggle(item.id)}
+          onClick={item.navigable ? undefined : () => toggle(item.id)}
         >
-          <i className={`${iconClass} nav-icon`} />
-          <span className="nav-label">{item.label}</span>
+          {item.navigable && item.path ? (
+            <NavLink to={item.path} className="nav-folder-link">
+              <i className={`${iconClass} nav-icon`} />
+              <span className="nav-label">{item.label}</span>
+            </NavLink>
+          ) : (
+            <>
+              <i className={`${iconClass} nav-icon`} />
+              <span className="nav-label">{item.label}</span>
+            </>
+          )}
           {item.color && (
             <span className="nav-color-dot" style={{ background: item.color }} />
           )}
-          <i className={`fa-solid ${isExpanded ? "fa-chevron-down" : "fa-chevron-right"} nav-chevron`} />
+          <i
+            className={`fa-solid ${isExpanded ? "fa-chevron-down" : "fa-chevron-right"} nav-chevron`}
+            onClick={(e) => { e.stopPropagation(); toggle(item.id); }}
+          />
         </div>
         {isExpanded && (
           <div className="nav-children">
