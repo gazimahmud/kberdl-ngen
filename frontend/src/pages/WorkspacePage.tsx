@@ -4,6 +4,8 @@ import MonacoEditor, { type OnMount } from "@monaco-editor/react";
 import Anthropic from "@anthropic-ai/sdk";
 import { getTenants, type SqlResult } from "../api/client";
 
+const STORAGE_KEY = "kberdl_anthropic_key";
+
 const TABS = [
   { id: "tenants",   label: "K-BERDL Tenants",           icon: "fa-solid fa-layer-group" },
   { id: "coscience", label: "KBase Co-Scientist",         icon: "fa-solid fa-brain" },
@@ -880,12 +882,16 @@ function SQLConsoleView({ tenant, onBack }: { tenant: string; onBack: () => void
   const [errMsg,     setErrMsg]     = useState<string | null>(null);
   const [elapsed,    setElapsed]    = useState(0);
   const [page,       setPage]       = useState(0);
-  const [nlOpen,     setNlOpen]     = useState(true);
-  const [sqlOpen,    setSqlOpen]    = useState(true);
-  const [nlPrompt,   setNlPrompt]   = useState(DEFAULT_NL_PROMPT);
-  const [generating, setGenerating] = useState(false);
+  const [nlOpen,       setNlOpen]       = useState(true);
+  const [sqlOpen,      setSqlOpen]      = useState(true);
+  const [nlPrompt,     setNlPrompt]     = useState(DEFAULT_NL_PROMPT);
+  const [generating,   setGenerating]   = useState(false);
+  const [explaining,   setExplaining]   = useState(false);
+  const [explanation,  setExplanation]  = useState("");
+  const [explainOpen,  setExplainOpen]  = useState(false);
 
-  const runQueryRef = useRef<() => void>(() => {});
+  const runQueryRef     = useRef<() => void>(() => {});
+  const abortExplainRef = useRef<AbortController | null>(null);
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const t0Ref       = useRef(0);
 
@@ -900,6 +906,47 @@ function SQLConsoleView({ tenant, onBack }: { tenant: string; onBack: () => void
     setGenerating(false);
     setSqlOpen(true);
   }, [nlPrompt, generating]);
+
+  const handleExplain = useCallback(async () => {
+    const sql = query.trim();
+    if (!sql || explaining) return;
+
+    const key = sessionStorage.getItem(STORAGE_KEY);
+    if (!key) {
+      setExplanation("No Claude API key found. Open the **KBase Co-Scientist** tab and connect your API key first.");
+      setExplainOpen(true);
+      return;
+    }
+
+    abortExplainRef.current?.abort();
+    const controller = new AbortController();
+    abortExplainRef.current = controller;
+
+    setExplaining(true);
+    setExplanation("");
+    setExplainOpen(true);
+
+    try {
+      const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true });
+      const stream = client.messages.stream(
+        {
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 512,
+          system: "You are a SparkSQL expert embedded in the K-BERDL data lakehouse platform. Explain SQL queries concisely in plain English — what it does, which tables/columns are involved, and what the result represents. No markdown headers, keep it brief.",
+          messages: [{ role: "user", content: `Explain this SparkSQL query:\n\n\`\`\`sql\n${sql}\n\`\`\`` }],
+        },
+        { signal: controller.signal },
+      );
+      stream.on("text", (text) => setExplanation((prev) => prev + text));
+      await stream.finalMessage();
+    } catch (e: unknown) {
+      if ((e as Error).name !== "AbortError") {
+        setExplanation("Error calling Claude API. Check your API key in the Co-Scientist tab.");
+      }
+    } finally {
+      setExplaining(false);
+    }
+  }, [query, explaining]);
 
   const runQuery = useCallback(async () => {
     if (!query.trim() || status === "running") return;
@@ -1064,7 +1111,42 @@ function SQLConsoleView({ tenant, onBack }: { tenant: string; onBack: () => void
                   )}
                 </button>
                 <span className="sqlc-kbd-hint">Ctrl+Enter</span>
+                <button
+                  className="sqlc-explain-btn"
+                  onClick={handleExplain}
+                  disabled={explaining || !query.trim()}
+                  title="Explain this query with Claude AI"
+                >
+                  {explaining ? (
+                    <>
+                      <i className="fa-solid fa-circle-notch fa-spin" />
+                      Explaining…
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-lightbulb" />
+                      Explain
+                    </>
+                  )}
+                </button>
               </div>
+
+              {explainOpen && explanation && (
+                <div className="sqlc-explain-panel">
+                  <div className="sqlc-explain-hd">
+                    <i className="fa-solid fa-lightbulb" style={{ color: "#f59e0b" }} />
+                    <span>Query Explanation</span>
+                    <button
+                      className="sqlc-explain-close"
+                      onClick={() => { setExplainOpen(false); abortExplainRef.current?.abort(); }}
+                      title="Close"
+                    >
+                      <i className="fa-solid fa-xmark" />
+                    </button>
+                  </div>
+                  <pre className="sqlc-explain-body">{explanation}</pre>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1157,16 +1239,7 @@ interface ChatMessage {
   content: string;
 }
 
-const SUGGESTIONS = [
-  "Analyze sulfate reduction pathways in H₂S environments",
-  "Summarize metabolite profiles across samples",
-  "Find genomes similar to a query sequence",
-  "Query metagenome assemblies for a KBase tenant",
-];
-
 // ─────────────────────────── CoScientistChat ─────────────────────────
-
-const STORAGE_KEY = "kberdl_anthropic_key";
 
 const SYSTEM_PROMPT = `You are KBase Co-Scientist, an expert AI assistant embedded in the KBase BER Data Lakehouse (K-BERDL) platform. You help scientists analyze biological data stored across multiple research tenants including ENIGMA, NMDC, PlanetMicrobe, PhageFoundry, MicrobDiscoveryForge, and others.
 
@@ -1178,6 +1251,99 @@ Your expertise covers:
 - Scientific interpretation of omics data
 
 Be concise, scientifically precise, and proactive about suggesting relevant analyses or queries the user could run against their tenant data.`;
+
+// ─────────────────────────── MockChatDemo ────────────────────────────
+
+type DemoPhase = "user-typing" | "thinking" | "ai-streaming" | "pausing";
+
+const DEMO_EXCHANGES = [
+  {
+    user: "Which ENIGMA genomes show the highest chromium tolerance?",
+    assistant: "Based on ENIGMA's metal tolerance data, top Cr(VI)-tolerant isolates include:\n\n• Arthrobacter sp. SRS-W-2-2016 — MIC > 5 mM Cr(VI), ChrA efflux transporter\n• Caulobacter sp. OR37 — upregulates glutathione-S-transferase under Cr(VI) stress\n• Deinococcus radiodurans — dual metal/radiation resistance via Mn-rich proteome\n\nQuery the data:\n\nSELECT genome_id, species, cr_mic_mm\nFROM enigma.metal_tolerance\nWHERE metal = 'Cr'\nORDER BY cr_mic_mm DESC LIMIT 10;",
+  },
+  {
+    user: "Summarize the core gene families in the ADP1 pangenome.",
+    assistant: "The ADP1 pangenome spans ~3,200 gene clusters:\n\n• Core (≥99% presence): 2,847 genes — replication, ribosomal proteins, central metabolism\n• Accessory (15–99%): 1,230 genes — niche adaptation, mobile elements, catabolism\n• Singletons: 420 genes — strain-specific, mostly hypothetical\n\nNotably, 83 aromatic catabolism genes (catABC, benABCD, pcaGH) appear in the core set — reflecting ADP1's broad xenobiotic degradation capacity.",
+  },
+];
+
+function MockChatDemo() {
+  const [exIdx,     setExIdx]     = useState(0);
+  const [userChars, setUserChars] = useState(0);
+  const [aiChars,   setAiChars]   = useState(0);
+  const [phase,     setPhase]     = useState<DemoPhase>("user-typing");
+
+  const ex = DEMO_EXCHANGES[exIdx];
+
+  useEffect(() => {
+    if (phase !== "user-typing") return;
+    if (userChars >= ex.user.length) {
+      const t = setTimeout(() => setPhase("thinking"), 600);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setUserChars((c) => c + 1), 28);
+    return () => clearTimeout(t);
+  }, [phase, userChars, ex.user.length]);
+
+  useEffect(() => {
+    if (phase !== "thinking") return;
+    const t = setTimeout(() => setPhase("ai-streaming"), 900);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "ai-streaming") return;
+    if (aiChars >= ex.assistant.length) {
+      const t = setTimeout(() => setPhase("pausing"), 300);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setAiChars((c) => c + 1), 9);
+    return () => clearTimeout(t);
+  }, [phase, aiChars, ex.assistant.length]);
+
+  useEffect(() => {
+    if (phase !== "pausing") return;
+    const t = setTimeout(() => {
+      setExIdx((i) => (i + 1) % DEMO_EXCHANGES.length);
+      setUserChars(0);
+      setAiChars(0);
+      setPhase("user-typing");
+    }, 3500);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  return (
+    <div className="demo-chat">
+      {userChars > 0 && (
+        <div className="chat-msg chat-msg--user">
+          <div className="chat-bubble">
+            {ex.user.slice(0, userChars)}
+            {phase === "user-typing" && <span className="chat-cursor" />}
+          </div>
+        </div>
+      )}
+      {(phase === "thinking" || aiChars > 0) && (
+        <div className="chat-msg chat-msg--assistant">
+          <div className="chat-avatar">
+            <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
+          </div>
+          {phase === "thinking" ? (
+            <div className="chat-bubble chat-bubble--thinking">
+              <span /><span /><span />
+            </div>
+          ) : (
+            <div className="chat-bubble">
+              <pre className="demo-ai-pre">
+                {ex.assistant.slice(0, aiChars)}
+                {phase === "ai-streaming" && <span className="chat-cursor" />}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function friendlyApiError(e: unknown): ReactNode {
   const msg = e instanceof Error ? e.message : String(e);
@@ -1227,58 +1393,71 @@ function ApiKeyGate({ onConnect }: { onConnect: (key: string) => void }) {
   return (
     <div className="chat-page">
       <div className="chat-messages">
-        <div className="apikey-gate">
-          <div className="apikey-gate-icon">
-            <i className="fa-solid fa-key" />
-          </div>
-          <h2 className="apikey-gate-title">Connect your Claude API key</h2>
-          <p className="apikey-gate-sub">
-            Your key is stored only in <strong>sessionStorage</strong> and is cleared
-            when you close this tab. It is sent directly to{" "}
-            <code>api.anthropic.com</code> — never to any intermediate server.
-          </p>
+        <div className="apikey-gate-layout">
 
-          <div className="apikey-input-row">
-            <div className="apikey-input-wrap">
-              <input
-                type={show ? "text" : "password"}
-                className="apikey-input"
-                placeholder="sk-ant-api03-…"
-                value={key}
-                onChange={(e) => { setKey(e.target.value); setError(""); }}
-                onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-                spellCheck={false}
-                autoComplete="off"
-              />
-              <button className="apikey-eye-btn" onClick={() => setShow((s) => !s)} title={show ? "Hide" : "Show"}>
-                <i className={`fa-solid ${show ? "fa-eye-slash" : "fa-eye"}`} />
+          {/* Left: connect form */}
+          <div className="apikey-gate">
+            <div className="apikey-gate-icon">
+              <i className="fa-solid fa-key" />
+            </div>
+            <h2 className="apikey-gate-title">Connect your Claude API key</h2>
+            <p className="apikey-gate-sub">
+              Your key is stored only in <strong>sessionStorage</strong> and is cleared
+              when you close this tab. It is sent directly to{" "}
+              <code>api.anthropic.com</code> — never to any intermediate server.
+            </p>
+
+            <div className="apikey-input-row">
+              <div className="apikey-input-wrap">
+                <input
+                  type={show ? "text" : "password"}
+                  className="apikey-input"
+                  placeholder="sk-ant-api03-…"
+                  value={key}
+                  onChange={(e) => { setKey(e.target.value); setError(""); }}
+                  onKeyDown={(e) => e.key === "Enter" && handleConnect()}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                <button className="apikey-eye-btn" onClick={() => setShow((s) => !s)} title={show ? "Hide" : "Show"}>
+                  <i className={`fa-solid ${show ? "fa-eye-slash" : "fa-eye"}`} />
+                </button>
+              </div>
+              <button
+                className="apikey-connect-btn"
+                onClick={handleConnect}
+                disabled={!key.trim() || testing}
+              >
+                {testing
+                  ? <><i className="fa-solid fa-circle-notch fa-spin" /> Verifying…</>
+                  : <><i className="fa-solid fa-plug" /> Connect</>}
               </button>
             </div>
-            <button
-              className="apikey-connect-btn"
-              onClick={handleConnect}
-              disabled={!key.trim() || testing}
-            >
-              {testing
-                ? <><i className="fa-solid fa-circle-notch fa-spin" /> Verifying…</>
-                : <><i className="fa-solid fa-plug" /> Connect</>}
-            </button>
+
+            {error && (
+              <p className="apikey-error">
+                <i className="fa-solid fa-circle-exclamation" /> {error}
+              </p>
+            )}
+
+            <p className="apikey-hint">
+              <i className="fa-solid fa-circle-info" />{" "}
+              Get a key at{" "}
+              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
+                console.anthropic.com
+              </a>
+              . We recommend setting a <strong>spending cap</strong> before use.
+            </p>
           </div>
 
-          {error && (
-            <p className="apikey-error">
-              <i className="fa-solid fa-circle-exclamation" /> {error}
-            </p>
-          )}
+          {/* Right: live demo preview */}
+          <div className="apikey-gate-preview">
+            <div className="apikey-preview-label">
+              <i className="fa-solid fa-circle-play" /> Live Preview
+            </div>
+            <MockChatDemo />
+          </div>
 
-          <p className="apikey-hint">
-            <i className="fa-solid fa-circle-info" />{" "}
-            Get a key at{" "}
-            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
-              console.anthropic.com
-            </a>
-            . We recommend setting a <strong>spending cap</strong> before use.
-          </p>
         </div>
       </div>
     </div>
@@ -1422,17 +1601,7 @@ function CoScientistChat() {
             <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="KBase Co-Scientist" className="chat-logo-img" />
             <h2>KBase Co-Scientist</h2>
             <p>Your AI assistant for biological data analysis and scientific discovery.</p>
-            <div className="chat-suggestions">
-              {SUGGESTIONS.map((s, i) => (
-                <button
-                  key={i}
-                  className="chat-suggestion"
-                  onClick={() => { setInput(s); textareaRef.current?.focus(); }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <MockChatDemo />
             <div className="chat-input-wrap chat-input-wrap--inline">
               {inputBox}
               <p className="chat-disclaimer">
