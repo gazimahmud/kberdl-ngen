@@ -2963,6 +2963,8 @@ td { padding: 0.7rem 1rem; border-top: 1px solid var(--kb-bg); }
   gap: 0.4rem;
 }
 .kd-nb-icon { color: var(--kb-blue); font-size: 0.75rem; }
+.kd-nb-link { color: var(--kb-blue); text-decoration: none; font-family: var(--font-mono); }
+.kd-nb-link:hover { text-decoration: underline; }
 .kd-step-purpose { font-size: 0.78rem; color: var(--kb-muted); line-height: 1.5; }
 
 /* Figure gallery */
