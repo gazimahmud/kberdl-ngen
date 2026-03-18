@@ -303,7 +303,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               id:    `tenant-${t}-proj-${p.id}`,
               label: p.title,
               icon:  "fa-solid fa-flask",
-              path:  `/projects/${p.id}`,
+              path:  `/projects/${p.id}?from=tenant:${t}`,
             })),
           },
         ],

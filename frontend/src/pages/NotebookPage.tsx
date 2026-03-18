@@ -499,7 +499,8 @@ function CellContainer({
 export default function NotebookPage() {
   const { tenant } = useParams<{ tenant: string }>();
   const [searchParams] = useSearchParams();
-  const path = searchParams.get("path") ?? "";
+  const path     = searchParams.get("path") ?? "";
+  const fromPath = searchParams.get("from");   // e.g. "/projects/enigma_...?from=tenant:enigma"
 
   const [cells, setCells] = useState<ICell[]>([]);
   const [activeCellIdx, setActiveCellIdx] = useState(0);
@@ -657,11 +658,23 @@ export default function NotebookPage() {
     <div className="nb-page">
       {/* Breadcrumb */}
       <nav className="breadcrumb">
-        <Link to="/">Workspace</Link>
-        {" / "}
-        <Link to={`/tenants/${tenant}`}>{tenant}</Link>
-        {" / "}
-        <span>{filename}</span>
+        {fromPath ? (
+          <>
+            <Link to={fromPath} className="nb-back-dashboard">
+              <i className="fa-solid fa-arrow-left" /> Back to Dashboard
+            </Link>
+            {" / "}
+            <span>{filename}</span>
+          </>
+        ) : (
+          <>
+            <Link to="/">Workspace</Link>
+            {" / "}
+            <Link to={`/tenants/${tenant}`}>{tenant}</Link>
+            {" / "}
+            <span>{filename}</span>
+          </>
+        )}
       </nav>
 
       {/* Toolbar */}

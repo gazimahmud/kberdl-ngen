@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -660,7 +660,19 @@ export function ProjectListPage() {
 
 export default function KnowledgeDashboardPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const [searchParams] = useSearchParams();
   const [lightboxFig, setLightboxFig] = useState<string | null>(null);
+
+  const fromParam = searchParams.get("from"); // e.g. "tenant:enigma" or null
+  const fromTenant = fromParam?.startsWith("tenant:") ? fromParam.slice(7) : null;
+  const backLabel  = fromTenant
+    ? `${TENANT_LABELS[fromTenant] ?? fromTenant} Discovery Catalog`
+    : "All Projects";
+  const backTo     = "/projects";
+
+  // Full current path (including from param) — passed to notebook links so
+  // the notebook viewer can return here.
+  const selfPath = `/projects/${projectId}${fromParam ? `?from=${fromParam}` : ""}`;
 
   const project = projectId ? PROJECT_MAP[projectId] : null;
 
@@ -688,8 +700,8 @@ export default function KnowledgeDashboardPage() {
 
       {/* ── Header ── */}
       <div className="kd-header" style={{ borderTopColor: project.categoryColor }}>
-        <Link to="/projects" className="kd-back-btn">
-          <i className="fa-solid fa-arrow-left" /> All Projects
+        <Link to={backTo} className="kd-back-btn">
+          <i className="fa-solid fa-arrow-left" /> {backLabel}
         </Link>
 
         <div className="kd-header-meta">
@@ -786,7 +798,7 @@ export default function KnowledgeDashboardPage() {
                 <div className="kd-step-name">
                   <i className="fa-solid fa-file-code kd-nb-icon" />
                   <Link
-                    to={`/tenants/kbase/notebooks?path=${encodeURIComponent(`projects/${project.id}/notebooks/${nb.name}`)}`}
+                    to={`/tenants/kbase/notebooks?path=${encodeURIComponent(`projects/${project.id}/notebooks/${nb.name}`)}&from=${encodeURIComponent(selfPath)}`}
                     className="kd-nb-link"
                     onClick={(e) => e.stopPropagation()}
                   >
