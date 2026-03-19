@@ -1706,6 +1706,7 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
   gap: 0.75rem;
   margin: 0.75rem 0;
+  text-align: left;
 }
 .demo-ai-pre {
   font-family: inherit;
