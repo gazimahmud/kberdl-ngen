@@ -115,17 +115,17 @@ function TenantCard({ tenant, onViewDictionary, onOpenConsole }: { tenant: strin
       </div>
 
       <div className="tc-actions">
-        <button className="tc-action" onClick={() => navigate(`/tenants/${tenant}`)}>
-          📓 Launch Notebook
-        </button>
         <button className="tc-action" onClick={onViewDictionary}>
-          📖 View Data Dictionary
-        </button>
-        <button className="tc-action" onClick={onOpenConsole}>
-          🖥 Open SQL Console
+          📖 Data Catalog
         </button>
         <button className="tc-action" onClick={() => navigate(`/projects?tenant=${tenant}`)}>
           🔭 Discovery Catalog
+        </button>
+        <button className="tc-action" onClick={() => navigate(`/tenants/${tenant}`)}>
+          📓 Launch Notebook
+        </button>
+        <button className="tc-action" onClick={onOpenConsole}>
+          🖥 SQL Console
         </button>
       </div>
     </div>
