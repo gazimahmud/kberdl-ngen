@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MonacoEditor, { type OnMount } from "@monaco-editor/react";
 import Anthropic from "@anthropic-ai/sdk";
@@ -1241,16 +1241,37 @@ interface ChatMessage {
 
 // ─────────────────────────── CoScientistChat ─────────────────────────
 
-const SYSTEM_PROMPT = `You are KBase Co-Scientist, an expert AI assistant embedded in the KBase BER Data Lakehouse (K-BERDL) platform. You help scientists analyze biological data stored across multiple research tenants including ENIGMA, NMDC, PlanetMicrobe, PhageFoundry, MicrobDiscoveryForge, and others.
+const MOCK_RESPONSES: { match: RegExp; text: string }[] = [
+  {
+    match: /enigma|chromium|chrom|metal.*(toler|resist)|tolera.*metal/i,
+    text: "Based on ENIGMA's metal tolerance data, top Cr(VI)-tolerant isolates include:\n\n• Arthrobacter sp. SRS-W-2-2016 — MIC > 5 mM Cr(VI), driven by ChrA efflux transporters\n• Caulobacter sp. OR37 — upregulates glutathione-S-transferase under Cr(VI) stress\n• Deinococcus radiodurans — dual metal and radiation resistance via Mn-rich proteome\n\nTo query this directly:\n\nSELECT genome_id, species, cr_mic_mm\nFROM enigma.metal_tolerance\nWHERE metal = 'Cr'\nORDER BY cr_mic_mm DESC\nLIMIT 10;",
+  },
+  {
+    match: /adp1|pangenome|acinetobacter|core gene|pan.?genome/i,
+    text: "The Acinetobacter baylyi ADP1 pangenome spans ~3,200 gene clusters:\n\n• Core (≥99% presence): 2,847 genes — DNA replication, ribosomal proteins, central carbon metabolism\n• Accessory (15–99%): 1,230 genes — niche adaptation, mobile genetic elements, catabolic pathways\n• Singletons: 420 genes — strain-specific, largely hypothetical proteins\n\nNotably, 83 aromatic catabolism genes (catABC, benABCD, pcaGH) appear in the core set — reflecting ADP1's remarkable xenobiotic degradation capacity across all sampled strains.",
+  },
+  {
+    match: /nmdc|metagenom|microbiom/i,
+    text: "The NMDC tenant contains 1,247 metagenome assemblies spanning 12 biomes — grassland, forest, wetland, and contaminated sediment environments.\n\nKey datasets:\n• Soil metagenomes: 634 samples (GOLD study IDs Gs0110115, Gs0114663)\n• Sediment metagenomes: 312 samples from contaminated DOE sites\n• Aquatic metagenomes: 301 samples including ALOHA and freshwater systems\n\nExplore functional profiles:\n\nSELECT biome, COUNT(*) AS samples, AVG(contig_count) AS avg_contigs\nFROM nmdc.metagenome_assembly\nGROUP BY biome\nORDER BY samples DESC;",
+  },
+  {
+    match: /kbase|protein|annotation|kegg|pfam|go.?term|function/i,
+    text: "KBase provides functional annotation through several integrated databases:\n\n• KEGG Orthology (KO): 23,847 annotated proteins across KBase tenant genomes\n• Pfam domains: 18,204 unique domain families detected\n• GO terms: Biological Process, Molecular Function, and Cellular Component ontologies\n• COG categories: 25 functional categories covering metabolism, information storage, and cellular processes\n\nTo find all genomes with a specific KEGG function:\n\nSELECT genome_id, species, ko_id, ko_description\nFROM kbase.functional_annotations\nWHERE ko_id = 'K00370'\nORDER BY species;",
+  },
+  {
+    match: /sql|query|select|table|from|where/i,
+    text: "I can help you build SparkSQL queries against any K-BERDL tenant. Here's a template for cross-genome functional analysis:\n\nSELECT\n  m.tenant_id,\n  m.species,\n  m.genome_size_mb,\n  f.ko_count\nFROM kbase.genome_metadata m\nJOIN kbase.functional_summary f\n  ON m.genome_id = f.genome_id\nWHERE m.completeness > 90\n  AND m.contamination < 5\nORDER BY f.ko_count DESC\nLIMIT 20;\n\nWhat specific data are you trying to query? I can tailor this to your exact needs.",
+  },
+];
 
-Your expertise covers:
-- Microbial genomics, metagenomics, and pangenomics
-- Metabolomics and biochemical pathway analysis
-- Bioinformatics workflows (KEGG, GO, Pfam, NCBI databases)
-- SQL queries against Trino/Iceberg data lakehouse tables
-- Scientific interpretation of omics data
+const MOCK_FALLBACK = "I can help you analyze biological data across K-BERDL tenants including ENIGMA, NMDC, PlanetMicrobe, KBase, and more.\n\nSome things I can help with:\n• Querying the SparkSQL lakehouse for specific organisms, genes, or functions\n• Interpreting metagenome assembly statistics and functional profiles\n• Comparing pangenome core/accessory gene partitions across taxa\n• Identifying genomes with specific metabolic capabilities or environmental tolerances\n\nWhat would you like to explore?";
 
-Be concise, scientifically precise, and proactive about suggesting relevant analyses or queries the user could run against their tenant data.`;
+function getMockResponse(input: string): string {
+  for (const { match, text } of MOCK_RESPONSES) {
+    if (match.test(input)) return text;
+  }
+  return MOCK_FALLBACK;
+}
 
 // ─────────────────────────── MockChatDemo ────────────────────────────
 
@@ -1345,135 +1366,12 @@ function MockChatDemo() {
   );
 }
 
-function friendlyApiError(e: unknown): ReactNode {
-  const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes("credit balance") || msg.includes("402") || msg.includes("credit")) {
-    return <>
-      Insufficient credits.{" "}
-      <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener noreferrer">
-        Add credits at console.anthropic.com →
-      </a>
-    </>;
-  }
-  if (msg.includes("401")) return "Invalid API key — authentication failed.";
-  return `Error: ${msg}`;
-}
-
-function ApiKeyGate({ onConnect }: { onConnect: (key: string) => void }) {
-  const [key, setKey]         = useState("");
-  const [show, setShow]       = useState(false);
-  const [error, setError]     = useState<ReactNode>("");
-  const [testing, setTesting] = useState(false);
-
-  const handleConnect = async () => {
-    const trimmed = key.trim();
-    if (!trimmed.startsWith("sk-ant-")) {
-      setError("Key should start with sk-ant-  — check and try again.");
-      return;
-    }
-    setTesting(true);
-    setError("");
-    try {
-      // Minimal test call to verify the key works
-      const client = new Anthropic({ apiKey: trimmed, dangerouslyAllowBrowser: true });
-      await client.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 8,
-        messages: [{ role: "user", content: "hi" }],
-      });
-      sessionStorage.setItem(STORAGE_KEY, trimmed);
-      onConnect(trimmed);
-    } catch (e: unknown) {
-      setError(friendlyApiError(e));
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  return (
-    <div className="chat-page">
-      <div className="chat-messages">
-        <div className="apikey-gate-layout">
-
-          {/* Left: connect form */}
-          <div className="apikey-gate">
-            <div className="apikey-gate-icon">
-              <i className="fa-solid fa-key" />
-            </div>
-            <h2 className="apikey-gate-title">Connect your Claude API key</h2>
-            <p className="apikey-gate-sub">
-              Your key is stored only in <strong>sessionStorage</strong> and is cleared
-              when you close this tab. It is sent directly to{" "}
-              <code>api.anthropic.com</code> — never to any intermediate server.
-            </p>
-
-            <div className="apikey-input-row">
-              <div className="apikey-input-wrap">
-                <input
-                  type={show ? "text" : "password"}
-                  className="apikey-input"
-                  placeholder="sk-ant-api03-…"
-                  value={key}
-                  onChange={(e) => { setKey(e.target.value); setError(""); }}
-                  onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-                  spellCheck={false}
-                  autoComplete="off"
-                />
-                <button className="apikey-eye-btn" onClick={() => setShow((s) => !s)} title={show ? "Hide" : "Show"}>
-                  <i className={`fa-solid ${show ? "fa-eye-slash" : "fa-eye"}`} />
-                </button>
-              </div>
-              <button
-                className="apikey-connect-btn"
-                onClick={handleConnect}
-                disabled={!key.trim() || testing}
-              >
-                {testing
-                  ? <><i className="fa-solid fa-circle-notch fa-spin" /> Verifying…</>
-                  : <><i className="fa-solid fa-plug" /> Connect</>}
-              </button>
-            </div>
-
-            {error && (
-              <p className="apikey-error">
-                <i className="fa-solid fa-circle-exclamation" /> {error}
-              </p>
-            )}
-
-            <p className="apikey-hint">
-              <i className="fa-solid fa-circle-info" />{" "}
-              Get a key at{" "}
-              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
-                console.anthropic.com
-              </a>
-              . We recommend setting a <strong>spending cap</strong> before use.
-            </p>
-          </div>
-
-          {/* Right: live demo preview */}
-          <div className="apikey-gate-preview">
-            <div className="apikey-preview-label">
-              <i className="fa-solid fa-circle-play" /> Live Preview
-            </div>
-            <MockChatDemo />
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function CoScientistChat() {
-  const [apiKey, setApiKey]     = useState<string | null>(
-    () => sessionStorage.getItem(STORAGE_KEY)
-  );
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput]       = useState("");
+  const [messages,  setMessages]  = useState<ChatMessage[]>([]);
+  const [input,     setInput]     = useState("");
   const [streaming, setStreaming] = useState(false);
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const abortRef    = useRef<AbortController | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1486,19 +1384,11 @@ function CoScientistChat() {
     ta.style.height = Math.min(ta.scrollHeight, 220) + "px";
   };
 
-  const handleDisconnect = () => {
-    abortRef.current?.abort();
-    sessionStorage.removeItem(STORAGE_KEY);
-    setApiKey(null);
-    setMessages([]);
-  };
-
   const handleSend = async () => {
-    if (!input.trim() || streaming || !apiKey) return;
+    if (!input.trim() || streaming) return;
 
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: input.trim() };
-    const allMessages = [...messages, userMsg];
-    setMessages(allMessages);
+    const userText = input.trim();
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: userText }]);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setStreaming(true);
@@ -1506,47 +1396,18 @@ function CoScientistChat() {
     const assistantId = crypto.randomUUID();
     setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
 
-    const abort = new AbortController();
-    abortRef.current = abort;
+    // Thinking delay before streaming
+    await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
 
-    try {
-      const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-      const stream = client.messages.stream({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: allMessages.map(({ role, content }) => ({ role, content })),
-      });
-
-      for await (const chunk of stream) {
-        if (abort.signal.aborted) break;
-        if (
-          chunk.type === "content_block_delta" &&
-          chunk.delta.type === "text_delta"
-        ) {
-          const delta = chunk.delta.text;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId ? { ...m, content: m.content + delta } : m
-            )
-          );
-        }
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") { /* user disconnected */ return; }
-      const raw = e instanceof Error ? e.message : String(e);
-      const msg = (raw.includes("credit balance") || raw.includes("credit") || raw.includes("402"))
-        ? "Insufficient credits — please add credits at:\nhttps://console.anthropic.com/settings/billing"
-        : raw.includes("401")
-        ? "Invalid API key — authentication failed."
-        : `Error: ${raw}`;
+    const response = getMockResponse(userText);
+    for (let i = 0; i < response.length; i++) {
+      await new Promise((r) => setTimeout(r, 10));
       setMessages((prev) =>
-        prev.map((m) => m.id === assistantId ? { ...m, content: msg } : m)
+        prev.map((m) => m.id === assistantId ? { ...m, content: response.slice(0, i + 1) } : m)
       );
-    } finally {
-      setStreaming(false);
-      abortRef.current = null;
     }
+
+    setStreaming(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1555,8 +1416,6 @@ function CoScientistChat() {
       handleSend();
     }
   };
-
-  if (!apiKey) return <ApiKeyGate onConnect={setApiKey} />;
 
   const inputBox = (
     <div className="chat-input-box">
@@ -1583,17 +1442,6 @@ function CoScientistChat() {
 
   return (
     <div className="chat-page">
-      {/* Key status bar */}
-      <div className="chat-key-bar">
-        <span className="chat-key-status">
-          <i className="fa-solid fa-circle-check" /> Claude API connected
-        </span>
-        <span className="chat-key-model">claude-sonnet-4-6</span>
-        <button className="chat-disconnect-btn" onClick={handleDisconnect} title="Disconnect API key">
-          <i className="fa-solid fa-plug-circle-xmark" /> Disconnect
-        </button>
-      </div>
-
       {/* Messages */}
       <div className="chat-messages">
         {messages.length === 0 ? (
