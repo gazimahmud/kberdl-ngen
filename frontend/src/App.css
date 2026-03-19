@@ -2678,6 +2678,42 @@ td { padding: 0.7rem 1rem; border-top: 1px solid var(--kb-bg); }
   color: var(--kb-muted);
   font-size: 0.875rem;
 }
+.kd-tenant-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.kd-tenant-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.7rem;
+  border: 1.5px solid;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.kd-tenant-filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.kd-tenant-filter-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid var(--kb-border-light);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--kb-muted);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.kd-tenant-filter-clear:hover { background: #f1f5f9; color: var(--kb-dark); }
 
 /* Category filter bar */
 .kd-list-filters {

@@ -124,6 +124,9 @@ function TenantCard({ tenant, onViewDictionary, onOpenConsole }: { tenant: strin
         <button className="tc-action" onClick={onOpenConsole}>
           🖥 Open SQL Console
         </button>
+        <button className="tc-action" onClick={() => navigate(`/projects?tenant=${tenant}`)}>
+          🔭 Discovery Catalog
+        </button>
       </div>
     </div>
   );

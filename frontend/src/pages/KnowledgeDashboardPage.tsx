@@ -581,15 +581,44 @@ const CATEGORY_FILTERS = ["All", ...Array.from(new Set(PROJECTS.map((p) => p.cat
 
 export function ProjectListPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState("All");
 
-  const visible = filter === "All" ? PROJECTS : PROJECTS.filter((p) => p.category === filter);
+  const tenantParam = searchParams.get("tenant");
+  const tenantPool  = tenantParam
+    ? PROJECTS.filter((p) => p.tenants.includes(tenantParam))
+    : PROJECTS;
+  const tenantLabel = tenantParam ? (TENANT_LABELS[tenantParam] ?? tenantParam) : null;
+  const tenantColor = tenantParam ? (TENANT_COLORS[tenantParam] ?? "#607d8b") : null;
+
+  const visible = filter === "All" ? tenantPool : tenantPool.filter((p) => p.category === filter);
 
   return (
     <div className="kd-list-page">
       <div className="kd-list-header">
-        <h2 className="kd-list-title">My Projects</h2>
-        <p className="kd-list-sub">{PROJECTS.length} research projects · Knowledge dashboards powered by K-BERDL</p>
+        <h2 className="kd-list-title">
+          {tenantLabel ? `${tenantLabel} — Discovery Catalog` : "My Projects"}
+        </h2>
+        <p className="kd-list-sub">
+          {tenantLabel
+            ? `${tenantPool.length} of ${PROJECTS.length} projects use ${tenantLabel} data`
+            : `${PROJECTS.length} research projects · Knowledge dashboards powered by K-BERDL`}
+        </p>
+        {tenantParam && (
+          <div className="kd-tenant-filter-bar">
+            <span className="kd-tenant-filter-badge" style={{ background: tenantColor + "18", borderColor: tenantColor!, color: tenantColor! }}>
+              <span className="kd-tenant-filter-dot" style={{ background: tenantColor! }} />
+              {tenantLabel}
+            </span>
+            <button
+              className="kd-tenant-filter-clear"
+              onClick={() => { setSearchParams({}); setFilter("All"); }}
+              title="Show all projects"
+            >
+              <i className="fa-solid fa-xmark" /> Clear filter
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Category filters */}
@@ -603,7 +632,7 @@ export function ProjectListPage() {
             {cat !== "All" && <i className={`${CATEGORY_ICONS[cat] ?? "fa-solid fa-flask"} kd-cat-icon`} />}
             {cat}
             <span className="kd-cat-count">
-              {cat === "All" ? PROJECTS.length : PROJECTS.filter((p) => p.category === cat).length}
+              {cat === "All" ? tenantPool.length : tenantPool.filter((p) => p.category === cat).length}
             </span>
           </button>
         ))}
