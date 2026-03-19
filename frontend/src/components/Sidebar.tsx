@@ -169,7 +169,7 @@ function NavNode({ item, depth, expanded, toggle, collapsed }: NavNodeProps) {
   }
 
   if (hasChildren) {
-    const isActive = item.navigable && item.path && location.pathname === item.path;
+    const isActive = item.navigable && item.path && location.pathname === item.path.split("?")[0];
     return (
       <div className="nav-group">
         <div
@@ -297,7 +297,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             id:       `tenant-${t}-projects`,
             label:    "Discovery Catalog",
             icon:     "fa-solid fa-diagram-project",
-            path:     "/projects",
+            path:     `/projects?tenant=${t}`,
             navigable: true,
             children: (PROJECTS_BY_TENANT[t] ?? []).map((p) => ({
               id:    `tenant-${t}-proj-${p.id}`,
