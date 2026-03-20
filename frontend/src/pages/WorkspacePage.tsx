@@ -1244,6 +1244,85 @@ interface ChatMessage {
 
 // ─────────────────────────── CoScientistChat ─────────────────────────
 
+interface Agent {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  planned?: boolean;
+}
+
+const AGENTS: Agent[] = [
+  { id: "general",   name: "General Purpose Co-Scientist", icon: "fa-solid fa-brain",            description: "Broad scientific Q&A across all K-BERDL tenants" },
+  { id: "planning",  name: "Planning Agent",               icon: "fa-solid fa-sitemap",           description: "Orchestrates multi-step research queries across agents" },
+  { id: "gxep",      name: "GxE→P Agent",                  icon: "fa-solid fa-dna",               description: "Phenotype prediction at tree-of-life scale" },
+  { id: "modeling",  name: "Modeling Agent",               icon: "fa-solid fa-diagram-project",   description: "Genome-scale metabolic modeling and simulation" },
+  { id: "knowledge", name: "Knowledge Agent",              icon: "fa-solid fa-lightbulb",         description: "Hypothesis generation, validation, and write-back" },
+  { id: "spark",     name: "Spark Query Agent",            icon: "fa-solid fa-bolt",              description: "Async batch data retrieval from the lakehouse" },
+  { id: "trino",     name: "Trino Query Agent",            icon: "fa-solid fa-database",          description: "Interactive low-latency exploratory queries", planned: true },
+  { id: "discovery", name: "Discovery Agent",              icon: "fa-solid fa-compass",           description: "Schema introspection and collection mapping" },
+];
+
+const AGENT_FALLBACKS: Record<string, string> = {
+  general:   "I can help you analyze biological data across K-BERDL tenants including ENIGMA, NMDC, PlanetMicrobe, KBase, and more.\n\nSome things I can help with:\n• Querying the SparkSQL lakehouse for specific organisms, genes, or functions\n• Interpreting metagenome assembly statistics and functional profiles\n• Comparing pangenome core/accessory gene partitions across taxa\n• Identifying genomes with specific metabolic capabilities or environmental tolerances\n\nWhat would you like to explore?",
+  planning:  "I'm the Planning Agent — I decompose complex research questions and coordinate work across specialized agents.\n\nGive me a high-level scientific goal and I'll:\n• Break it into sub-tasks and assign them to GxE→P, Modeling, Knowledge, or Query agents\n• Maintain session context across the full research pipeline\n• Synthesize outputs into a coherent discovery plan\n\nExample: \"Identify novel metal tolerance mechanisms in ENIGMA isolates and build predictive models for bioremediation targets.\"",
+  gxep:      "I'm the GxE→P Agent — I predict phenotypes at tree-of-life scale using fitness data, genomic annotations, and condition parameters.\n\nGive me organism IDs and growth conditions to receive predictions classified as:\n• Confident — supported by direct RB-TnSeq or Biolog fitness data\n• Uncertain — inferred from phylogenetic homologs\n• Testable — predictable but not yet experimentally validated\n• Dark matter — no functional signal available in the lakehouse\n\nWhat phenotype or organism would you like to explore?",
+  modeling:  "I'm the Modeling Agent — I build and simulate genome-scale metabolic models (GEMs) for organisms in K-BERDL.\n\nI integrate:\n• Biochemistry DB (56K reactions, KBase)\n• UniRef protein sequences for annotation\n• GxE→P predictions as constraint targets\n\nOutputs include flux balance analysis (FBA) results, gap-fill candidates, and prediction vs. experiment deltas. Which organism's metabolic network would you like to model?",
+  knowledge: "I'm the Knowledge Agent — I generate and validate scientific hypotheses by integrating prediction failures, literature evidence, and structural data.\n\nWhen GxE→P or Modeling agents find discrepancies, I:\n• Search literature for mechanistic explanations\n• Cross-reference structure databases for annotation corrections\n• Write validated findings back to the Tenant Discovery Catalog as versioned entries\n\nWhat prediction failure or anomaly would you like me to investigate?",
+  spark:     "I'm the Spark Query Agent — I handle async batch queries against the K-BERDL lakehouse via SparkSQL.\n\nSubmit a query and I'll return a Job ID with an S3 result path on completion. Best for:\n• Large cross-tenant joins across millions of rows\n• Full-table scans with aggregations\n• Batch export of query results for downstream analysis\n\nFor interactive sub-second queries, use the Trino Query Agent. What data would you like to retrieve?",
+  trino:     "I'm the Trino Query Agent (coming soon) — designed for interactive, sub-second exploratory queries.\n\nI'll accept natural language queries, infer schema context via the Discovery Agent, and return synchronous results optimized for the SQL Console and Data Explorer UX.\n\nThis agent is currently in planned status. Use the Spark Query Agent or SQL Console for queries in the meantime.",
+  discovery: "I'm the Discovery Agent — I introspect tenant schemas and map available data assets across the K-BERDL lakehouse.\n\nAsk me about any tenant to get:\n• Available databases and table inventories\n• Schema documentation and column-level descriptions\n• Data asset summaries for the Data Explorer\n• Collection mappings for cross-tenant query planning\n\nWhich tenant's schema would you like to explore?",
+};
+
+function AgentSelector({ selected, onChange }: { selected: string; onChange: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const agent = AGENTS.find((a) => a.id === selected)!;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="agent-selector" ref={ref}>
+      <button className="agent-selector-btn" onClick={() => setOpen((o) => !o)}>
+        <i className={`${agent.icon} agent-selector-icon`} />
+        <span className="agent-selector-name">{agent.name}</span>
+        <i className={`fa-solid ${open ? "fa-chevron-up" : "fa-chevron-down"} agent-selector-chevron`} />
+      </button>
+
+      {open && (
+        <div className="agent-dropdown">
+          {AGENTS.map((a) => (
+            <button
+              key={a.id}
+              className={`agent-option${a.id === selected ? " agent-option--active" : ""}${a.planned ? " agent-option--planned" : ""}`}
+              onClick={() => { onChange(a.id); setOpen(false); }}
+            >
+              <div className="agent-option-left">
+                <i className={`${a.icon} agent-option-icon`} />
+                <div>
+                  <div className="agent-option-name">
+                    {a.name}
+                    {a.planned && <span className="agent-option-tag">Planned</span>}
+                  </div>
+                  <div className="agent-option-desc">{a.description}</div>
+                </div>
+              </div>
+              {a.id === selected && <i className="fa-solid fa-check agent-option-check" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const MOCK_RESPONSES: { match: RegExp; text: string }[] = [
   {
     match: /enigma|chromium|chrom|metal.*(toler|resist)|tolera.*metal/i,
@@ -1267,13 +1346,12 @@ const MOCK_RESPONSES: { match: RegExp; text: string }[] = [
   },
 ];
 
-const MOCK_FALLBACK = "I can help you analyze biological data across K-BERDL tenants including ENIGMA, NMDC, PlanetMicrobe, KBase, and more.\n\nSome things I can help with:\n• Querying the SparkSQL lakehouse for specific organisms, genes, or functions\n• Interpreting metagenome assembly statistics and functional profiles\n• Comparing pangenome core/accessory gene partitions across taxa\n• Identifying genomes with specific metabolic capabilities or environmental tolerances\n\nWhat would you like to explore?";
-
-function getMockResponse(input: string): string {
+function getMockResponse(input: string, agentId: string): string {
+  if (agentId !== "general") return AGENT_FALLBACKS[agentId] ?? AGENT_FALLBACKS.general;
   for (const { match, text } of MOCK_RESPONSES) {
     if (match.test(input)) return text;
   }
-  return MOCK_FALLBACK;
+  return AGENT_FALLBACKS.general;
 }
 
 // ─────────────────────────── MockChatDemo ────────────────────────────
@@ -1370,11 +1448,18 @@ function MockChatDemo() {
 }
 
 function CoScientistChat() {
-  const [messages,  setMessages]  = useState<ChatMessage[]>([]);
-  const [input,     setInput]     = useState("");
-  const [streaming, setStreaming] = useState(false);
+  const [messages,      setMessages]      = useState<ChatMessage[]>([]);
+  const [input,         setInput]         = useState("");
+  const [streaming,     setStreaming]     = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState("general");
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleAgentChange = (id: string) => {
+    setSelectedAgent(id);
+    setMessages([]);
+    setInput("");
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1402,7 +1487,7 @@ function CoScientistChat() {
     // Thinking delay before streaming
     await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
 
-    const response = getMockResponse(userText);
+    const response = getMockResponse(userText, selectedAgent);
     for (let i = 0; i < response.length; i++) {
       await new Promise((r) => setTimeout(r, 10));
       setMessages((prev) =>
@@ -1420,12 +1505,14 @@ function CoScientistChat() {
     }
   };
 
+  const currentAgent = AGENTS.find((a) => a.id === selectedAgent)!;
+
   const inputBox = (
     <div className="chat-input-box">
       <textarea
         ref={textareaRef}
         className="chat-textarea"
-        placeholder="Message KBase Co-Scientist…"
+        placeholder={`Message ${currentAgent.name}…`}
         value={input}
         rows={3}
         onChange={(e) => { setInput(e.target.value); autoResize(); }}
@@ -1445,13 +1532,18 @@ function CoScientistChat() {
 
   return (
     <div className="chat-page">
+      {/* Agent selector bar */}
+      <div className="chat-agent-bar">
+        <AgentSelector selected={selectedAgent} onChange={handleAgentChange} />
+      </div>
+
       {/* Messages */}
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="chat-empty">
             <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="KBase Co-Scientist" className="chat-logo-img" />
-            <h2>KBase Co-Scientist</h2>
-            <p>Your AI assistant for biological data analysis and scientific discovery.</p>
+            <h2>{currentAgent.name}</h2>
+            <p>{currentAgent.description}</p>
             <MockChatDemo />
             <div className="chat-input-wrap chat-input-wrap--inline">
               {inputBox}
