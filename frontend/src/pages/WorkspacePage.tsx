@@ -7,7 +7,7 @@ import { getTenants, type SqlResult } from "../api/client";
 const STORAGE_KEY = "kberdl_anthropic_key";
 
 const TABS = [
-  { id: "tenants",   label: "K-BERDL Tenants",           icon: "fa-solid fa-layer-group" },
+  { id: "tenants",   label: "K-BERDL Lakehouse Tenants",  icon: "fa-solid fa-layer-group" },
   { id: "coscience", label: "KBase Co-Scientist",         icon: "fa-solid fa-brain" },
   { id: "mdf",       label: "KBase Research Observatory", icon: "fa-solid fa-microscope" },
   { id: "feed",      label: "Knowledge Amplification Feed",     icon: "fa-solid fa-rss" },
