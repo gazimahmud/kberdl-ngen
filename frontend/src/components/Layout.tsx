@@ -12,9 +12,9 @@ export default function Layout() {
       <header className="app-header">
         <Link to="/" className="header-home-link">
           <img src={`${import.meta.env.BASE_URL}kbase-mark.svg`} className="header-logo-mark" alt="KBase" />
-          <span className="app-logo">K-BERDL</span>
+          <span className="app-logo">KBase</span>
           <span className="header-pipe">|</span>
-          <span className="app-title">KBase BER Data Lakehouse</span>
+          <span className="app-title">BER Domain Intelligence</span>
         </Link>
         <div className="header-center" />
         <div className="header-right">

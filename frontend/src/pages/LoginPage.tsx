@@ -27,8 +27,8 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <span className="login-logo">K-BERDL</span>
-          <p className="login-subtitle">BER Data Lakehouse — Next-Gen Platform</p>
+          <span className="login-logo">KBase | BER Domain Intelligence</span>
+          <p className="login-subtitle">Powered by K-BERDL · Next-Gen Platform</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
