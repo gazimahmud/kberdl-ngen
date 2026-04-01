@@ -40,6 +40,10 @@ interface ProjectData {
   figures: string[];
 }
 
+function toSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
 // ── Tenant display helpers ────────────────────────────────────────────
 
 const TENANT_COLORS: Record<string, string> = {
@@ -845,7 +849,7 @@ export default function KnowledgeDashboardPage() {
                           }
                           {m.role === "steward" && <span className="kd-member-steward-badge">★</span>}
                           <div className="kd-member-card">
-                            <div className="kd-member-card-name">{m.name}</div>
+                            <Link to={`/profile/${toSlug(m.name)}`} className="kd-member-card-name">{m.name}</Link>
                             <div className="kd-member-card-title">{m.jobTitle}</div>
                             <div className="kd-member-card-role">{m.role === "steward" ? "Data Steward" : "Member"}</div>
                           </div>
