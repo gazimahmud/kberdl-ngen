@@ -75,33 +75,39 @@ const TENANT_LABELS: Record<string, string> = {
 
 const TENANT_MEMBERS: Record<string, TenantMember[]> = {
   kbase: [
-    { name: "Paramvir Dehal",      role: "steward", photo: "https://i.pravatar.cc/40?u=paramvir.dehal" },
-    { name: "Gavin Price",         role: "member",  photo: "https://i.pravatar.cc/40?u=gavin.price.kbase" },
-    { name: "Elena Gustafson",     role: "member",  photo: "https://i.pravatar.cc/40?u=elena.gustafson" },
+    { name: "Adam Arkin",          role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
+    { name: "Paramvir Dehal",      role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/dehal-paramvir_rev@2x.png" },
+    { name: "Elisha Wood-Charlson",role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/EWC_LBL_headshot_refresh-scaled-e1677212010694.jpg" },
+    { name: "Gavin Price",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/price-gavin_rev@2x.png" },
+    { name: "Gazi Mahmud",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/mahmud-gazi.jpg" },
   ],
   kessence: [
-    { name: "Adam Arkin",          role: "steward", photo: "https://i.pravatar.cc/40?u=adam.arkin.lbnl" },
-    { name: "Morgan Price",        role: "member",  photo: "https://i.pravatar.cc/40?u=morgan.price.kessence" },
+    { name: "Chris Henry",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/ChrisHenryPicture.jpg" },
+    { name: "Janaka Edirisinghe",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/edirisinghe-janaka@2x-1.png" },
+    { name: "Sam Seaver",          role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/seaver-sam@2x.png" },
   ],
   enigma: [
-    { name: "Aindrila Mukhopadhyay", role: "steward", photo: "https://i.pravatar.cc/40?u=aindrila.mukhopadhyay" },
-    { name: "Romy Chakraborty",    role: "member",  photo: "https://i.pravatar.cc/40?u=romy.chakraborty" },
+    { name: "Bob Cottingham",      role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/cottingham-bob@2x.png" },
+    { name: "Miriam Land",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/land-miriam_rev@2x.png" },
+    { name: "Sean Jungbluth",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/jungbluth-sean_rev@2x.png" },
   ],
   phagefoundry: [
-    { name: "Vivek Mutalik",       role: "steward", photo: "https://i.pravatar.cc/40?u=vivek.mutalik" },
-    { name: "Shravani Chitale",    role: "member",  photo: "https://i.pravatar.cc/40?u=shravani.chitale" },
+    { name: "Shane Canon",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/canon-shane@2x.png" },
+    { name: "Dylan Chivian",       role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chivian-dylan_rev@2x.png" },
   ],
   nmdc: [
-    { name: "Emiley Eloe-Fadrosh", role: "steward", photo: "https://i.pravatar.cc/40?u=emiley.eloe.fadrosh" },
-    { name: "Ben Bolduc",          role: "member",  photo: "https://i.pravatar.cc/40?u=ben.bolduc.nmdc" },
+    { name: "Doreen Ware",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/ware-doreen@2x.png" },
+    { name: "Pamela Weisenhorn",   role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/weisenhorn-pamela@2x.png" },
+    { name: "Annette Greiner",     role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/greiner-annette_rev@2x.png" },
   ],
   planetmicrobe: [
-    { name: "Bonnie Hurwitz",      role: "steward", photo: "https://i.pravatar.cc/40?u=bonnie.hurwitz" },
-    { name: "Cecilia Tran",        role: "member",  photo: "https://i.pravatar.cc/40?u=cecilia.tran.pm" },
+    { name: "Shinjae Yoo",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/yoo-shinjae@2x.png" },
+    { name: "Ziming Yang",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/09/yang-ziming.jpg-scaled-e1601491568798.jpg" },
   ],
   microbdiscoveryforge: [
-    { name: "Nikos Kyrpides",      role: "steward", photo: "https://i.pravatar.cc/40?u=nikos.kyrpides" },
-    { name: "Simon Roux",          role: "member",  photo: "https://i.pravatar.cc/40?u=simon.roux.jgi" },
+    { name: "Pavel Novichkov",     role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/novichkov-pavel-scaled.jpg" },
+    { name: "John-Marc Chandonia", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chandonia-john-marc_rev@2x.png" },
+    { name: "Roman Sutormin",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/03/Sutormin-Roman.jpg" },
   ],
 };
 
