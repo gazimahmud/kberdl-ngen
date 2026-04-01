@@ -76,10 +76,10 @@ const TENANT_LABELS: Record<string, string> = {
 const TENANT_MEMBERS: Record<string, TenantMember[]> = {
   kbase: [
     { name: "Adam Arkin",          role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
-    { name: "Paramvir Dehal",      role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/dehal-paramvir_rev@2x.png" },
+    { name: "Gazi Mahmud",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/mahmud-gazi.jpg" },
+    { name: "Paramvir Dehal",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/dehal-paramvir_rev@2x.png" },
     { name: "Elisha Wood-Charlson",role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/EWC_LBL_headshot_refresh-scaled-e1677212010694.jpg" },
     { name: "Gavin Price",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/price-gavin_rev@2x.png" },
-    { name: "Gazi Mahmud",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/mahmud-gazi.jpg" },
   ],
   kessence: [
     { name: "Chris Henry",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/ChrisHenryPicture.jpg" },
