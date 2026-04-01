@@ -60,6 +60,7 @@ const TENANT_COLORS: Record<string, string> = {
   ideas:                "#d97706",
   globalusers:          "#0f766e",
   protect:              "#475569",
+  arkinlab:             "#0891b2",
 };
 
 const TENANT_LABELS: Record<string, string> = {
@@ -76,6 +77,7 @@ const TENANT_LABELS: Record<string, string> = {
   ideas:                "IDEAS",
   globalusers:          "GlobalUsers",
   protect:              "Protect",
+  arkinlab:             "ArkinLab",
 };
 
 const TENANT_MEMBERS: Record<string, TenantMember[]> = {
@@ -88,17 +90,24 @@ const TENANT_MEMBERS: Record<string, TenantMember[]> = {
   ],
   kessence: [
     { name: "Chris Henry",         jobTitle: "PI",                        role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/ChrisHenryPicture.jpg" },
+    { name: "Adam Arkin",          jobTitle: "Lead PI",                   role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
     { name: "Janaka Edirisinghe",  jobTitle: "Computational Biologist",   role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/edirisinghe-janaka@2x-1.png" },
     { name: "Sam Seaver",          jobTitle: "Software Engineer",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/seaver-sam@2x.png" },
   ],
   enigma: [
     { name: "Bob Cottingham",      jobTitle: "PI",                  role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/cottingham-bob@2x.png" },
+    { name: "Adam Arkin",          jobTitle: "Lead PI",             role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
     { name: "Miriam Land",         jobTitle: "Bioinformatics Lead", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/land-miriam_rev@2x.png" },
     { name: "Sean Jungbluth",      jobTitle: "Research Scientist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/jungbluth-sean_rev@2x.png" },
   ],
   phagefoundry: [
+    { name: "Adam Arkin",          jobTitle: "Lead PI",             role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
     { name: "Shane Canon",         jobTitle: "Systems Architect",   role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/canon-shane@2x.png" },
     { name: "Dylan Chivian",       jobTitle: "Research Scientist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chivian-dylan_rev@2x.png" },
+  ],
+  arkinlab: [
+    { name: "Adam Arkin",          jobTitle: "Lab Director",        role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
+    { name: "Gazi Mahmud",         jobTitle: "Architect Lead",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/mahmud-gazi.jpg" },
   ],
   nmdc: [
     { name: "Doreen Ware",         jobTitle: "PI",                        role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/ware-doreen@2x.png" },
