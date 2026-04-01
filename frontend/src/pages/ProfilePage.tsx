@@ -259,7 +259,7 @@ export default function ProfilePage() {
 
           {/* Impact ring card */}
           <div className="sp-card">
-            <div className="sp-card-title"><i className="fa-solid fa-chart-line" /> K-BERDL Impact</div>
+            <div className="sp-card-title"><i className="fa-solid fa-chart-line" /> K-BERDL Impact Score</div>
             <div className="sp-ring-wrap">
               <svg className="sp-ring-svg" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r={R} className="sp-ring-bg" />
