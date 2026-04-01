@@ -259,9 +259,6 @@ export default function ProfilePage() {
               <button className="sp-btn-primary" style={{ background: primaryColor }}>
                 <i className="fa-solid fa-user-plus" /> Connect
               </button>
-              <button className="sp-btn-secondary">
-                <i className="fa-regular fa-envelope" /> Message
-              </button>
             </div>
           </div>
         </div>
