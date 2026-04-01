@@ -307,19 +307,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Data contributions */}
-          <div className="sp-card">
-            <div className="sp-card-title"><i className="fa-solid fa-database" /> Data Contributions</div>
-            <div className="sp-chips">
-              {dataTables.map(t => (
-                <span key={t} className="sp-chip"><i className="fa-solid fa-table sp-chip-icon" />{t}</span>
-              ))}
-            </div>
-          </div>
-
         </aside>
 
-        {/* ── RIGHT column: research feed ── */}
+        {/* ── RIGHT column: research + data feed ── */}
         <main className="sp-feed">
           <div className="sp-card-title sp-feed-title"><i className="fa-solid fa-flask" /> Research Contributions</div>
           {researchContribs.map((r, i) => (
@@ -334,6 +324,16 @@ export default function ProfilePage() {
               </div>
             </div>
           ))}
+
+          {/* Data contributions */}
+          <div className="sp-card sp-data-card">
+            <div className="sp-card-title"><i className="fa-solid fa-database" /> Data Contributions</div>
+            <div className="sp-chips">
+              {dataTables.map(t => (
+                <span key={t} className="sp-chip"><i className="fa-solid fa-table sp-chip-icon" />{t}</span>
+              ))}
+            </div>
+          </div>
         </main>
 
       </div>
