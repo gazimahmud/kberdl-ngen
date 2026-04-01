@@ -3154,6 +3154,7 @@ td { padding: 0.7rem 1rem; border-top: 1px solid var(--kb-bg); }
   height: 2rem;
   flex-shrink: 0;
   cursor: default;
+  overflow: visible;
 }
 .kd-member-photo {
   width: 2rem;
@@ -3192,6 +3193,50 @@ td { padding: 0.7rem 1rem; border-top: 1px solid var(--kb-bg); }
   justify-content: center;
   line-height: 1;
   box-shadow: 0 0 0 1px #fff;
+}
+.kd-member-card {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid var(--kb-border-light);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+}
+.kd-member-card::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #fff;
+}
+.kd-member-card::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--kb-border-light);
+  margin-top: 1px;
+}
+.kd-member-circle:hover .kd-member-card { display: block; }
+.kd-member-card-name { font-size: 0.78rem; font-weight: 700; color: var(--kb-dark); margin-bottom: 0.15rem; }
+.kd-member-card-title { font-size: 0.72rem; color: var(--kb-muted); margin-bottom: 0.2rem; }
+.kd-member-card-role {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* Key findings grid */

@@ -10,6 +10,7 @@ interface KeyFinding {
 
 interface TenantMember {
   name: string;
+  jobTitle: string;
   role: "member" | "steward";
   photo?: string;
 }
@@ -75,39 +76,39 @@ const TENANT_LABELS: Record<string, string> = {
 
 const TENANT_MEMBERS: Record<string, TenantMember[]> = {
   kbase: [
-    { name: "Adam Arkin",          role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
-    { name: "Gazi Mahmud",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/mahmud-gazi.jpg" },
-    { name: "Paramvir Dehal",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/dehal-paramvir_rev@2x.png" },
-    { name: "Elisha Wood-Charlson",role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/EWC_LBL_headshot_refresh-scaled-e1677212010694.jpg" },
-    { name: "Gavin Price",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/price-gavin_rev@2x.png" },
+    { name: "Adam Arkin",          jobTitle: "Lead PI",          role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
+    { name: "Gazi Mahmud",         jobTitle: "Architect Lead",   role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/mahmud-gazi.jpg" },
+    { name: "Paramvir Dehal",      jobTitle: "Science Lead",     role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/dehal-paramvir_rev@2x.png" },
+    { name: "Elisha Wood-Charlson",jobTitle: "Engagement Lead",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/EWC_LBL_headshot_refresh-scaled-e1677212010694.jpg" },
+    { name: "Gavin Price",         jobTitle: "Bioinformaticist", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/price-gavin_rev@2x.png" },
   ],
   kessence: [
-    { name: "Chris Henry",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/ChrisHenryPicture.jpg" },
-    { name: "Janaka Edirisinghe",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/edirisinghe-janaka@2x-1.png" },
-    { name: "Sam Seaver",          role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/seaver-sam@2x.png" },
+    { name: "Chris Henry",         jobTitle: "PI",                        role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/ChrisHenryPicture.jpg" },
+    { name: "Janaka Edirisinghe",  jobTitle: "Computational Biologist",   role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/edirisinghe-janaka@2x-1.png" },
+    { name: "Sam Seaver",          jobTitle: "Software Engineer",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/seaver-sam@2x.png" },
   ],
   enigma: [
-    { name: "Bob Cottingham",      role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/cottingham-bob@2x.png" },
-    { name: "Miriam Land",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/land-miriam_rev@2x.png" },
-    { name: "Sean Jungbluth",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/jungbluth-sean_rev@2x.png" },
+    { name: "Bob Cottingham",      jobTitle: "PI",                  role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/cottingham-bob@2x.png" },
+    { name: "Miriam Land",         jobTitle: "Bioinformatics Lead", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/land-miriam_rev@2x.png" },
+    { name: "Sean Jungbluth",      jobTitle: "Research Scientist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/jungbluth-sean_rev@2x.png" },
   ],
   phagefoundry: [
-    { name: "Shane Canon",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/canon-shane@2x.png" },
-    { name: "Dylan Chivian",       role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chivian-dylan_rev@2x.png" },
+    { name: "Shane Canon",         jobTitle: "Systems Architect",   role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/canon-shane@2x.png" },
+    { name: "Dylan Chivian",       jobTitle: "Research Scientist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chivian-dylan_rev@2x.png" },
   ],
   nmdc: [
-    { name: "Doreen Ware",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/ware-doreen@2x.png" },
-    { name: "Pamela Weisenhorn",   role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/weisenhorn-pamela@2x.png" },
-    { name: "Annette Greiner",     role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/greiner-annette_rev@2x.png" },
+    { name: "Doreen Ware",         jobTitle: "PI",                        role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/ware-doreen@2x.png" },
+    { name: "Pamela Weisenhorn",   jobTitle: "Data Scientist",            role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/weisenhorn-pamela@2x.png" },
+    { name: "Annette Greiner",     jobTitle: "Scientific Data Engineer",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/greiner-annette_rev@2x.png" },
   ],
   planetmicrobe: [
-    { name: "Shinjae Yoo",         role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/yoo-shinjae@2x.png" },
-    { name: "Ziming Yang",         role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/09/yang-ziming.jpg-scaled-e1601491568798.jpg" },
+    { name: "Shinjae Yoo",         jobTitle: "Computational Scientist",  role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/yoo-shinjae@2x.png" },
+    { name: "Ziming Yang",         jobTitle: "Research Scientist",       role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/09/yang-ziming.jpg-scaled-e1601491568798.jpg" },
   ],
   microbdiscoveryforge: [
-    { name: "Pavel Novichkov",     role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/novichkov-pavel-scaled.jpg" },
-    { name: "John-Marc Chandonia", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chandonia-john-marc_rev@2x.png" },
-    { name: "Roman Sutormin",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/03/Sutormin-Roman.jpg" },
+    { name: "Pavel Novichkov",     jobTitle: "Research Scientist",       role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/novichkov-pavel-scaled.jpg" },
+    { name: "John-Marc Chandonia", jobTitle: "Bioinformatics Scientist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chandonia-john-marc_rev@2x.png" },
+    { name: "Roman Sutormin",      jobTitle: "Research Scientist",        role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/03/Sutormin-Roman.jpg" },
   ],
 };
 
@@ -837,12 +838,17 @@ export default function KnowledgeDashboardPage() {
                   {(TENANT_MEMBERS[t] ?? []).length > 0 && (
                     <div className="kd-tenant-members">
                       {TENANT_MEMBERS[t].map((m) => (
-                        <div key={m.name} className="kd-member-circle" title={`${m.name} · ${m.role === "steward" ? "Data Steward" : "Member"}`}>
+                        <div key={m.name} className="kd-member-circle">
                           {m.photo
                             ? <img src={m.photo} alt={m.name} className="kd-member-photo" />
                             : <span className="kd-member-initials" style={{ background: color }}>{m.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</span>
                           }
-                          {m.role === "steward" && <span className="kd-member-steward-badge" title="Data Steward">★</span>}
+                          {m.role === "steward" && <span className="kd-member-steward-badge">★</span>}
+                          <div className="kd-member-card">
+                            <div className="kd-member-card-name">{m.name}</div>
+                            <div className="kd-member-card-title">{m.jobTitle}</div>
+                            <div className="kd-member-card-role">{m.role === "steward" ? "Data Steward" : "Member"}</div>
+                          </div>
                         </div>
                       ))}
                     </div>
