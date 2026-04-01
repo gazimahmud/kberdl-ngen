@@ -324,7 +324,7 @@ export default function ProfilePage() {
 
           {/* Tenant memberships */}
           <div className="sp-card">
-            <div className="sp-card-title"><i className="fa-solid fa-layer-group" /> Tenants</div>
+            <div className="sp-card-title"><i className="fa-solid fa-layer-group" /> Tenant Affiliations</div>
             <div className="sp-tenant-list">
               {memberships.map(m => {
                 const c = TENANT_COLORS[m.tenant] ?? "#607d8b";
