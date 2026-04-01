@@ -774,7 +774,7 @@ export default function KnowledgeDashboardPage() {
         </section>
 
         <section className="kd-section kd-tenants-section">
-          <h2 className="kd-section-title"><i className="fa-solid fa-database" /> Tenants & Data Sources</h2>
+          <h2 className="kd-section-title"><i className="fa-solid fa-database" /> Tenants and Data Contributors</h2>
           <div className="kd-tenants-list">
             {project.tenants.map((t) => {
               const color = TENANT_COLORS[t] ?? "#607d8b";
