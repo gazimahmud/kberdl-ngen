@@ -8,6 +8,12 @@ interface KeyFinding {
   detail: string;
 }
 
+interface TenantMember {
+  name: string;
+  role: "member" | "steward";
+  photo?: string;
+}
+
 interface Notebook {
   step: string;
   name: string;
@@ -65,6 +71,38 @@ const TENANT_LABELS: Record<string, string> = {
   ideas:                "IDEAS",
   globalusers:          "GlobalUsers",
   protect:              "Protect",
+};
+
+const TENANT_MEMBERS: Record<string, TenantMember[]> = {
+  kbase: [
+    { name: "Paramvir Dehal",      role: "steward", photo: "https://i.pravatar.cc/40?u=paramvir.dehal" },
+    { name: "Gavin Price",         role: "member",  photo: "https://i.pravatar.cc/40?u=gavin.price.kbase" },
+    { name: "Elena Gustafson",     role: "member",  photo: "https://i.pravatar.cc/40?u=elena.gustafson" },
+  ],
+  kessence: [
+    { name: "Adam Arkin",          role: "steward", photo: "https://i.pravatar.cc/40?u=adam.arkin.lbnl" },
+    { name: "Morgan Price",        role: "member",  photo: "https://i.pravatar.cc/40?u=morgan.price.kessence" },
+  ],
+  enigma: [
+    { name: "Aindrila Mukhopadhyay", role: "steward", photo: "https://i.pravatar.cc/40?u=aindrila.mukhopadhyay" },
+    { name: "Romy Chakraborty",    role: "member",  photo: "https://i.pravatar.cc/40?u=romy.chakraborty" },
+  ],
+  phagefoundry: [
+    { name: "Vivek Mutalik",       role: "steward", photo: "https://i.pravatar.cc/40?u=vivek.mutalik" },
+    { name: "Shravani Chitale",    role: "member",  photo: "https://i.pravatar.cc/40?u=shravani.chitale" },
+  ],
+  nmdc: [
+    { name: "Emiley Eloe-Fadrosh", role: "steward", photo: "https://i.pravatar.cc/40?u=emiley.eloe.fadrosh" },
+    { name: "Ben Bolduc",          role: "member",  photo: "https://i.pravatar.cc/40?u=ben.bolduc.nmdc" },
+  ],
+  planetmicrobe: [
+    { name: "Bonnie Hurwitz",      role: "steward", photo: "https://i.pravatar.cc/40?u=bonnie.hurwitz" },
+    { name: "Cecilia Tran",        role: "member",  photo: "https://i.pravatar.cc/40?u=cecilia.tran.pm" },
+  ],
+  microbdiscoveryforge: [
+    { name: "Nikos Kyrpides",      role: "steward", photo: "https://i.pravatar.cc/40?u=nikos.kyrpides" },
+    { name: "Simon Roux",          role: "member",  photo: "https://i.pravatar.cc/40?u=simon.roux.jgi" },
+  ],
 };
 
 // ── Project data ──────────────────────────────────────────────────────
@@ -790,6 +828,19 @@ export default function KnowledgeDashboardPage() {
                       <li key={tbl}><i className="fa-solid fa-table kd-tbl-icon" />{tbl}</li>
                     ))}
                   </ul>
+                  {(TENANT_MEMBERS[t] ?? []).length > 0 && (
+                    <div className="kd-tenant-members">
+                      {TENANT_MEMBERS[t].map((m) => (
+                        <div key={m.name} className="kd-member-circle" title={`${m.name} · ${m.role === "steward" ? "Data Steward" : "Member"}`}>
+                          {m.photo
+                            ? <img src={m.photo} alt={m.name} className="kd-member-photo" />
+                            : <span className="kd-member-initials" style={{ background: color }}>{m.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</span>
+                          }
+                          {m.role === "steward" && <span className="kd-member-steward-badge" title="Data Steward">★</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}

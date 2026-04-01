@@ -3140,6 +3140,60 @@ td { padding: 0.7rem 1rem; border-top: 1px solid var(--kb-bg); }
 .kd-tenant-tables li { font-size: 0.75rem; color: var(--kb-muted); font-family: var(--font-mono); display: flex; align-items: baseline; gap: 0.4rem; }
 .kd-tbl-icon { font-size: 0.65rem; color: var(--kb-blue); flex-shrink: 0; }
 
+.kd-tenant-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--kb-border-light);
+}
+.kd-member-circle {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  cursor: default;
+}
+.kd-member-photo {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  display: block;
+}
+.kd-member-initials {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.kd-member-steward-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 0.5rem;
+  background: #f59e0b;
+  color: #fff;
+  border-radius: 50%;
+  width: 0.85rem;
+  height: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 0 1px #fff;
+}
+
 /* Key findings grid */
 .kd-findings-grid {
   display: grid;
