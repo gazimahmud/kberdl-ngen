@@ -110,14 +110,26 @@ const TENANT_LABELS: Record<string, string> = {
   phagefoundry: "PhageFoundry", planetmicrobe: "PlanetMicrobe",
   microbdiscoveryforge: "MicrobDiscoveryForge", pnnlsoil: "PnnlSoil",
   aile: "AIAle", asymbio: "Asymbio", ideas: "IDEAS",
-  globalusers: "GlobalUsers", protect: "Protect",
+  globalusers: "GlobalUsers", protect: "Protect", arkinlab: "ArkinLab",
+};
+
+const TENANT_INSTITUTIONS: Record<string, string> = {
+  kbase: "Lawrence Berkeley National Laboratory",
+  arkinlab: "Lawrence Berkeley National Laboratory",
+  nmdc: "Lawrence Berkeley National Laboratory",
+  phagefoundry: "Lawrence Berkeley National Laboratory",
+  kessence: "Argonne National Laboratory",
+  enigma: "Oak Ridge National Laboratory",
+  planetmicrobe: "Brookhaven National Laboratory",
+  microbdiscoveryforge: "Lawrence Berkeley National Laboratory",
+  pnnlsoil: "Pacific Northwest National Laboratory",
 };
 
 const TENANT_COLORS: Record<string, string> = {
   kbase: "#127dc3", kessence: "#6366f1", enigma: "#7c3aed", nmdc: "#ea580c",
   phagefoundry: "#dc2626", planetmicrobe: "#0369a1", microbdiscoveryforge: "#16a34a",
   pnnlsoil: "#9333ea", aile: "#3b82f6", asymbio: "#10b981", ideas: "#d97706",
-  globalusers: "#0f766e", protect: "#475569",
+  globalusers: "#0f766e", protect: "#475569", arkinlab: "#0891b2",
 };
 
 const TENANT_MEMBERS: Record<string, TenantMember[]> = {
@@ -128,17 +140,25 @@ const TENANT_MEMBERS: Record<string, TenantMember[]> = {
     { name: "Elisha Wood-Charlson", jobTitle: "Engagement Lead",   role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/EWC_LBL_headshot_refresh-scaled-e1677212010694.jpg" },
     { name: "Gavin Price",          jobTitle: "Bioinformaticist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/price-gavin_rev@2x.png" },
   ],
+  arkinlab: [
+    { name: "Adam Arkin",           jobTitle: "Lead PI",           role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
+    { name: "Paramvir Dehal",       jobTitle: "Science Lead",      role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/dehal-paramvir_rev@2x.png" },
+    { name: "Pavel Novichkov",      jobTitle: "Research Scientist", role: "member", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2024/02/novichkov-pavel-scaled.jpg" },
+  ],
   kessence: [
+    { name: "Adam Arkin",           jobTitle: "Lead PI",                  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
     { name: "Chris Henry",          jobTitle: "PI",                       role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/ChrisHenryPicture.jpg" },
     { name: "Janaka Edirisinghe",   jobTitle: "Computational Biologist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/edirisinghe-janaka@2x-1.png" },
     { name: "Sam Seaver",           jobTitle: "Software Engineer",        role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/seaver-sam@2x.png" },
   ],
   enigma: [
+    { name: "Adam Arkin",           jobTitle: "Lead PI",             role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
     { name: "Bob Cottingham",       jobTitle: "PI",                  role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/cottingham-bob@2x.png" },
     { name: "Miriam Land",          jobTitle: "Bioinformatics Lead", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/land-miriam_rev@2x.png" },
     { name: "Sean Jungbluth",       jobTitle: "Research Scientist",  role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/jungbluth-sean_rev@2x.png" },
   ],
   phagefoundry: [
+    { name: "Adam Arkin",           jobTitle: "Lead PI",            role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/06/team-slider.jpg" },
     { name: "Shane Canon",          jobTitle: "Systems Architect",  role: "steward", photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/canon-shane@2x.png" },
     { name: "Dylan Chivian",        jobTitle: "Research Scientist", role: "member",  photo: "https://www.kbase.us/wp-content/uploads/sites/6/2020/07/chivian-dylan_rev@2x.png" },
   ],
@@ -192,62 +212,81 @@ export default function ProfilePage() {
   const CIRC = 2 * Math.PI * R;
   const dash = (impact.overall / 100) * CIRC;
 
+  const institution = TENANT_INSTITUTIONS[memberships[0].tenant] ?? "Department of Energy";
+
   return (
     <div className="sp-page">
 
-      {/* ── Cover + Avatar ── */}
-      <div className="sp-cover" style={{ background: `linear-gradient(135deg, ${primaryColor}cc 0%, ${primaryColor}44 100%)` }}>
+      {/* ── Cover ── */}
+      <div className="sp-cover" style={{ background: `linear-gradient(135deg, ${primaryColor}dd 0%, ${primaryColor}66 60%, #0f172a 100%)` }}>
         <Link to={-1 as never} className="sp-back-btn">
           <i className="fa-solid fa-arrow-left" /> Back
         </Link>
       </div>
 
-      <div className="sp-identity">
-        <div className="sp-avatar-wrap">
-          {person.photo
-            ? <img src={person.photo} alt={person.name} className="sp-avatar" />
-            : <div className="sp-avatar sp-avatar-initials" style={{ background: primaryColor }}>
-                {person.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+      {/* ── LinkedIn-style profile card ── */}
+      <div className="sp-profile-card">
+        <div className="sp-identity">
+          <div className="sp-avatar-wrap">
+            {person.photo
+              ? <img src={person.photo} alt={person.name} className="sp-avatar" />
+              : <div className="sp-avatar sp-avatar-initials" style={{ background: primaryColor }}>
+                  {person.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                </div>
+            }
+            {memberships.some(m => m.role === "steward") && (
+              <span className="sp-steward-badge" title="Data Steward">★</span>
+            )}
+          </div>
+
+          <div className="sp-identity-main">
+            <div className="sp-identity-info">
+              <h1 className="sp-name">{person.name}</h1>
+              <div className="sp-headline">{person.jobTitle}</div>
+              <div className="sp-affiliation">
+                <i className="fa-solid fa-building" /> {institution}
               </div>
-          }
-          {memberships.some(m => m.role === "steward") && (
-            <span className="sp-steward-badge" title="Data Steward">★</span>
-          )}
-        </div>
-        <div className="sp-identity-info">
-          <h1 className="sp-name">{person.name}</h1>
-          <div className="sp-title">{person.jobTitle}</div>
-          <div className="sp-tenant-badges">
-            {memberships.map(m => (
-              <span key={m.tenant} className="sp-tenant-badge" style={{ background: `${TENANT_COLORS[m.tenant]}18`, color: TENANT_COLORS[m.tenant], borderColor: `${TENANT_COLORS[m.tenant]}44` }}>
-                {TENANT_LABELS[m.tenant] ?? m.tenant}
-                {m.role === "steward" && <span className="sp-badge-star">★</span>}
-              </span>
-            ))}
+              <div className="sp-tenant-badges">
+                {memberships.map(m => (
+                  <span key={m.tenant} className="sp-tenant-badge" style={{ background: `${TENANT_COLORS[m.tenant]}18`, color: TENANT_COLORS[m.tenant], borderColor: `${TENANT_COLORS[m.tenant]}44` }}>
+                    {TENANT_LABELS[m.tenant] ?? m.tenant}
+                    {m.role === "steward" && <span className="sp-badge-star">★</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="sp-identity-actions">
+              <button className="sp-btn-primary" style={{ background: primaryColor }}>
+                <i className="fa-solid fa-user-plus" /> Connect
+              </button>
+              <button className="sp-btn-secondary">
+                <i className="fa-regular fa-envelope" /> Message
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Stats strip ── */}
-      <div className="sp-stats-strip">
-        <div className="sp-stat">
-          <div className="sp-stat-value" style={{ color: primaryColor }}>{impact.overall}</div>
-          <div className="sp-stat-label">Impact Score</div>
-        </div>
-        <div className="sp-stat-divider" />
-        <div className="sp-stat">
-          <div className="sp-stat-value">{researchContribs.length}</div>
-          <div className="sp-stat-label">Research Outcomes</div>
-        </div>
-        <div className="sp-stat-divider" />
-        <div className="sp-stat">
-          <div className="sp-stat-value">{dataTables.length}</div>
-          <div className="sp-stat-label">Data Tables</div>
-        </div>
-        <div className="sp-stat-divider" />
-        <div className="sp-stat">
-          <div className="sp-stat-value">{memberships.length}</div>
-          <div className="sp-stat-label">Tenant{memberships.length !== 1 ? "s" : ""}</div>
+        {/* ── Stats strip ── */}
+        <div className="sp-stats-strip">
+          <div className="sp-stat">
+            <div className="sp-stat-value" style={{ color: primaryColor }}>{impact.overall}</div>
+            <div className="sp-stat-label">Impact Score</div>
+          </div>
+          <div className="sp-stat-divider" />
+          <div className="sp-stat">
+            <div className="sp-stat-value">{researchContribs.length}</div>
+            <div className="sp-stat-label">Research Outcomes</div>
+          </div>
+          <div className="sp-stat-divider" />
+          <div className="sp-stat">
+            <div className="sp-stat-value">{dataTables.length}</div>
+            <div className="sp-stat-label">Data Tables</div>
+          </div>
+          <div className="sp-stat-divider" />
+          <div className="sp-stat">
+            <div className="sp-stat-value">{memberships.length}</div>
+            <div className="sp-stat-label">Tenant{memberships.length !== 1 ? "s" : ""}</div>
+          </div>
         </div>
       </div>
 
