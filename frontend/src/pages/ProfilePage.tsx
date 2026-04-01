@@ -212,7 +212,6 @@ export default function ProfilePage() {
   }
 
   const person = memberships[0];
-  const rng = makeRng(slug);
   const impact = getImpactScores(slug);
   const researchContribs = pick(RESEARCH_OUTCOMES, makeRng(slug + "-research"), 4);
   const dataTables = pick(DATA_TABLES, makeRng(slug + "-data"), 5);
