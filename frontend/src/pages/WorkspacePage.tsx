@@ -2271,6 +2271,211 @@ function DataIntelligenceFeed() {
   );
 }
 
+// ─────────────────────────── SettingsDrawer ──────────────────────────
+
+const BERIL_DEFAULT_ENDPOINT = "https://hub.berdl.kbase.us/apis/mcp/sparksql";
+const CLAUDE_MODELS = [
+  { value: "claude-opus-4-6",           label: "Claude Opus 4.6  — Most capable" },
+  { value: "claude-sonnet-4-6",         label: "Claude Sonnet 4.6  — Balanced" },
+  { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5  — Fastest" },
+];
+
+function SettingsDrawer({ onClose }: { onClose: () => void }) {
+  const [kberdlToken,   setKberdlToken]   = useState(() => localStorage.getItem("kberdl_auth_token") ?? "");
+  const [berilEndpoint, setBerilEndpoint] = useState(() => localStorage.getItem("beril_endpoint")    ?? BERIL_DEFAULT_ENDPOINT);
+  const [claudeKey,     setClaudeKey]     = useState(() => localStorage.getItem("claude_api_key")    ?? "");
+  const [claudeModel,   setClaudeModel]   = useState(() => localStorage.getItem("claude_model")      ?? "claude-opus-4-6");
+  const [showToken,     setShowToken]     = useState(false);
+  const [showClaude,    setShowClaude]    = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [pingStatus,    setPingStatus]    = useState<"idle" | "testing" | "ok" | "fail">("idle");
+
+  const save = () => {
+    kberdlToken   ? localStorage.setItem("kberdl_auth_token", kberdlToken)   : localStorage.removeItem("kberdl_auth_token");
+    berilEndpoint ? localStorage.setItem("beril_endpoint",    berilEndpoint)  : localStorage.removeItem("beril_endpoint");
+    claudeKey     ? localStorage.setItem("claude_api_key",    claudeKey)      : localStorage.removeItem("claude_api_key");
+    localStorage.setItem("claude_model", claudeModel);
+    // Also keep the legacy keys used by the chat panel
+    kberdlToken ? localStorage.setItem("kberdl_api_key", kberdlToken) : localStorage.removeItem("kberdl_api_key");
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2200);
+  };
+
+  const testConnection = async () => {
+    if (!kberdlToken) { setPingStatus("fail"); setTimeout(() => setPingStatus("idle"), 3000); return; }
+    setPingStatus("testing");
+    try {
+      const res = await fetch("/api/beril/ping", {
+        headers: { "X-BERIL-Token": kberdlToken },
+      });
+      setPingStatus(res.ok ? "ok" : "fail");
+    } catch {
+      setPingStatus("fail");
+    }
+    setTimeout(() => setPingStatus("idle"), 4000);
+  };
+
+  const clearField = (which: "token" | "claude") => {
+    if (which === "token")  { setKberdlToken(""); localStorage.removeItem("kberdl_auth_token"); localStorage.removeItem("kberdl_api_key"); }
+    if (which === "claude") { setClaudeKey("");   localStorage.removeItem("claude_api_key"); }
+  };
+
+  const pingLabel = { idle: null, testing: "Testing…", ok: "Connected", fail: "Unreachable" }[pingStatus];
+  const pingCls   = { idle: "", testing: "sd-ping--testing", ok: "sd-ping--ok", fail: "sd-ping--fail" }[pingStatus];
+
+  return (
+    <>
+      <div className="sd-overlay" onClick={onClose} />
+      <div className="sd-drawer">
+
+        {/* Header */}
+        <div className="sd-header">
+          <span className="sd-title"><i className="fa-solid fa-sliders" /> Platform Settings</span>
+          <button className="sd-close" onClick={onClose}><i className="fa-solid fa-xmark" /></button>
+        </div>
+
+        <div className="sd-body">
+
+          {/* ── K-BERDL / BERIL ── */}
+          <div className="sd-section">
+            <div className="sd-section-heading">
+              <i className="fa-solid fa-database" />
+              <span>K-BERDL / BERIL Connection</span>
+            </div>
+            <p className="sd-section-desc">
+              Your KBase auth token authenticates all remote Spark SQL queries against the K-BERDL data lakehouse via the BERIL MCP server.
+            </p>
+
+            <div className="sd-field">
+              <label className="sd-label">KBASE Auth Token</label>
+              <div className="sd-input-row">
+                <input
+                  type={showToken ? "text" : "password"}
+                  className="sd-input sd-input--mono"
+                  placeholder="Enter KBASE_AUTH_TOKEN…"
+                  value={kberdlToken}
+                  onChange={e => setKberdlToken(e.target.value)}
+                  autoComplete="off" spellCheck={false}
+                />
+                <button className="sd-icon-btn" onClick={() => setShowToken(s => !s)} title={showToken ? "Hide" : "Show"}>
+                  <i className={`fa-solid ${showToken ? "fa-eye-slash" : "fa-eye"}`} />
+                </button>
+                {kberdlToken && (
+                  <button className="sd-icon-btn sd-icon-btn--danger" onClick={() => clearField("token")} title="Clear">
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                )}
+              </div>
+              {kberdlToken && <div className="sd-saved-preview"><i className="fa-solid fa-circle-check" /> Saved: {kberdlToken.slice(0,4)}{"•".repeat(12)}{kberdlToken.slice(-4)}</div>}
+            </div>
+
+            <div className="sd-field">
+              <label className="sd-label">BERIL Spark SQL Endpoint</label>
+              <input
+                type="text"
+                className="sd-input sd-input--mono"
+                value={berilEndpoint}
+                onChange={e => setBerilEndpoint(e.target.value)}
+                spellCheck={false}
+              />
+              <div className="sd-hint">Default: {BERIL_DEFAULT_ENDPOINT}</div>
+            </div>
+
+            <div className="sd-test-row">
+              <button className="sd-test-btn" onClick={testConnection} disabled={pingStatus === "testing"}>
+                {pingStatus === "testing"
+                  ? <><i className="fa-solid fa-spinner fa-spin" /> Testing…</>
+                  : <><i className="fa-solid fa-plug" /> Test Connection</>}
+              </button>
+              {pingLabel && pingStatus !== "idle" && (
+                <span className={`sd-ping ${pingCls}`}>
+                  <i className={`fa-solid ${pingStatus === "ok" ? "fa-circle-check" : pingStatus === "fail" ? "fa-circle-xmark" : "fa-spinner fa-spin"}`} />
+                  {pingLabel}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* ── AI Model ── */}
+          <div className="sd-section">
+            <div className="sd-section-heading">
+              <i className="fa-solid fa-brain" />
+              <span>AI Model (Co-Scientist)</span>
+            </div>
+            <p className="sd-section-desc">
+              The Claude API key powers the Co-Scientist agents. Keys are stored locally in your browser and never transmitted to any server other than Anthropic.
+            </p>
+
+            <div className="sd-field">
+              <label className="sd-label">Claude API Key</label>
+              <div className="sd-input-row">
+                <input
+                  type={showClaude ? "text" : "password"}
+                  className="sd-input sd-input--mono"
+                  placeholder="sk-ant-…"
+                  value={claudeKey}
+                  onChange={e => setClaudeKey(e.target.value)}
+                  autoComplete="off" spellCheck={false}
+                />
+                <button className="sd-icon-btn" onClick={() => setShowClaude(s => !s)} title={showClaude ? "Hide" : "Show"}>
+                  <i className={`fa-solid ${showClaude ? "fa-eye-slash" : "fa-eye"}`} />
+                </button>
+                {claudeKey && (
+                  <button className="sd-icon-btn sd-icon-btn--danger" onClick={() => clearField("claude")} title="Clear">
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                )}
+              </div>
+              {claudeKey && <div className="sd-saved-preview"><i className="fa-solid fa-circle-check" /> Saved: {claudeKey.slice(0,6)}{"•".repeat(12)}{claudeKey.slice(-4)}</div>}
+            </div>
+
+            <div className="sd-field">
+              <label className="sd-label">Model</label>
+              <select className="sd-select" value={claudeModel} onChange={e => setClaudeModel(e.target.value)}>
+                {CLAUDE_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* ── Status summary ── */}
+          <div className="sd-status-card">
+            <div className="sd-status-row">
+              <span className="sd-status-label">K-BERDL Token</span>
+              <span className={`sd-status-pill ${kberdlToken ? "sd-status-pill--ok" : "sd-status-pill--missing"}`}>
+                {kberdlToken ? <><i className="fa-solid fa-circle-check" /> Configured</> : <><i className="fa-solid fa-circle-xmark" /> Not set</>}
+              </span>
+            </div>
+            <div className="sd-status-row">
+              <span className="sd-status-label">Claude API Key</span>
+              <span className={`sd-status-pill ${claudeKey ? "sd-status-pill--ok" : "sd-status-pill--missing"}`}>
+                {claudeKey ? <><i className="fa-solid fa-circle-check" /> Configured</> : <><i className="fa-solid fa-circle-xmark" /> Not set</>}
+              </span>
+            </div>
+            <div className="sd-status-row">
+              <span className="sd-status-label">Active Model</span>
+              <span className="sd-status-pill sd-status-pill--info">
+                <i className="fa-solid fa-microchip" /> {CLAUDE_MODELS.find(m => m.value === claudeModel)?.label.split(" — ")[0]}
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="sd-footer">
+          <button className="sd-cancel-btn" onClick={onClose}>Cancel</button>
+          <button className="sd-save-btn" onClick={save}>
+            {saved
+              ? <><i className="fa-solid fa-check" /> Saved!</>
+              : <><i className="fa-solid fa-floppy-disk" /> Save Settings</>}
+          </button>
+        </div>
+
+      </div>
+    </>
+  );
+}
+
 // ─────────────────────────── WorkspacePage ───────────────────────────
 
 export default function WorkspacePage() {
@@ -2279,6 +2484,7 @@ export default function WorkspacePage() {
   const [activeTab, setActiveTab]           = useState("tenants");
   const [activeDictionary, setActiveDictionary] = useState<string | null>(null);
   const [activeConsole,    setActiveConsole]    = useState<string | null>(null);
+  const [showSettings,     setShowSettings]     = useState(false);
   const [searchParams] = useSearchParams();
 
   // Sync tab / dictionary / console view from URL search params (sidebar links)
@@ -2309,21 +2515,44 @@ export default function WorkspacePage() {
 
   if (loading) return <div className="loading">Loading workspace…</div>;
 
+  const kberdlConfigured = !!localStorage.getItem("kberdl_auth_token");
+  const claudeConfigured = !!localStorage.getItem("claude_api_key");
+
   return (
     <div className="workspace-page">
-      {/* Tab bar */}
-      <div className="ws-tabs">
-        {TABS.map((tab) => (
+      {/* Tab bar + settings button */}
+      <div className="ws-tab-row">
+        <div className="ws-tabs">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`ws-tab ${activeTab === tab.id ? "ws-tab--active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <i className={tab.icon} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="ws-tab-actions">
+          {(kberdlConfigured || claudeConfigured) && (
+            <span className="ws-keys-badge" title="API keys configured">
+              <i className="fa-solid fa-circle-check" />
+              {kberdlConfigured && claudeConfigured ? "Both keys set" : kberdlConfigured ? "K-BERDL key set" : "Claude key set"}
+            </span>
+          )}
           <button
-            key={tab.id}
-            className={`ws-tab ${activeTab === tab.id ? "ws-tab--active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
+            className={`ws-settings-btn${showSettings ? " ws-settings-btn--active" : ""}`}
+            onClick={() => setShowSettings(s => !s)}
+            title="Platform Settings"
           >
-            <i className={tab.icon} />
-            {tab.label}
+            <i className="fa-solid fa-gear" />
+            Settings
           </button>
-        ))}
+        </div>
       </div>
+
+      {showSettings && <SettingsDrawer onClose={() => setShowSettings(false)} />}
 
       {/* Tab panels */}
       {activeTab === "tenants" && activeDictionary && (

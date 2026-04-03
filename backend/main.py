@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
-from api import auth, workspace, tenants, notebooks, kernel_proxy, observatory, sql
+from api import auth, workspace, tenants, notebooks, kernel_proxy, observatory, sql, beril
 
 app = FastAPI(
     title="K-BERDL Next-Gen API",
@@ -24,6 +24,7 @@ app.include_router(notebooks.router, prefix="/api")
 app.include_router(kernel_proxy.router, prefix="/api")
 app.include_router(observatory.router, prefix="/api")
 app.include_router(sql.router, prefix="/api")
+app.include_router(beril.router, prefix="/api")
 
 
 @app.get("/health")
