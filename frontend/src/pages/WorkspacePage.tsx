@@ -1447,6 +1447,12 @@ function MockChatDemo() {
   );
 }
 
+function maskKey(key: string): string {
+  if (!key) return "";
+  if (key.length <= 8) return "•".repeat(key.length);
+  return key.slice(0, 4) + "•".repeat(Math.min(key.length - 8, 20)) + key.slice(-4);
+}
+
 function CoScientistChat() {
   const [messages,      setMessages]      = useState<ChatMessage[]>([]);
   const [input,         setInput]         = useState("");
@@ -1454,6 +1460,32 @@ function CoScientistChat() {
   const [selectedAgent, setSelectedAgent] = useState("general");
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Settings state — persisted in localStorage
+  const [showSettings,   setShowSettings]   = useState(false);
+  const [kberdlKey,      setKberdlKey]      = useState(() => localStorage.getItem("kberdl_api_key")  ?? "");
+  const [claudeKey,      setClaudeKey]      = useState(() => localStorage.getItem("claude_api_key")  ?? "");
+  const [draftKberdl,    setDraftKberdl]    = useState(kberdlKey);
+  const [draftClaude,    setDraftClaude]    = useState(claudeKey);
+  const [showKberdlKey,  setShowKberdlKey]  = useState(false);
+  const [showClaudeKey,  setShowClaudeKey]  = useState(false);
+  const [savedFlash,     setSavedFlash]     = useState(false);
+
+  const handleSaveKeys = () => {
+    const kb = draftKberdl.trim();
+    const cl = draftClaude.trim();
+    if (kb) localStorage.setItem("kberdl_api_key", kb); else localStorage.removeItem("kberdl_api_key");
+    if (cl) localStorage.setItem("claude_api_key",  cl); else localStorage.removeItem("claude_api_key");
+    setKberdlKey(kb);
+    setClaudeKey(cl);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
+  };
+
+  const handleClearKey = (which: "kberdl" | "claude") => {
+    if (which === "kberdl") { setDraftKberdl(""); setKberdlKey(""); localStorage.removeItem("kberdl_api_key"); }
+    else                    { setDraftClaude(""); setClaudeKey(""); localStorage.removeItem("claude_api_key"); }
+  };
 
   const handleAgentChange = (id: string) => {
     setSelectedAgent(id);
@@ -1484,7 +1516,6 @@ function CoScientistChat() {
     const assistantId = crypto.randomUUID();
     setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
 
-    // Thinking delay before streaming
     await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
 
     const response = getMockResponse(userText, selectedAgent);
@@ -1506,6 +1537,7 @@ function CoScientistChat() {
   };
 
   const currentAgent = AGENTS.find((a) => a.id === selectedAgent)!;
+  const keysConfigured = !!(kberdlKey && claudeKey);
 
   const inputBox = (
     <div className="chat-input-box">
@@ -1535,7 +1567,100 @@ function CoScientistChat() {
       {/* Agent selector bar */}
       <div className="chat-agent-bar">
         <AgentSelector selected={selectedAgent} onChange={handleAgentChange} />
+        <div className="chat-bar-right">
+          {keysConfigured && (
+            <span className="chat-keys-indicator" title="API keys configured">
+              <i className="fa-solid fa-circle-check" /> Keys configured
+            </span>
+          )}
+          <button
+            className={`chat-settings-btn${showSettings ? " chat-settings-btn--active" : ""}`}
+            onClick={() => { setShowSettings((s) => !s); setDraftKberdl(kberdlKey); setDraftClaude(claudeKey); }}
+            title="API Key Settings"
+          >
+            <i className="fa-solid fa-gear" />
+          </button>
+        </div>
       </div>
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div className="chat-settings-panel">
+          <div className="chat-settings-header">
+            <span className="chat-settings-title"><i className="fa-solid fa-key" /> API Key Configuration</span>
+            <button className="chat-settings-close" onClick={() => setShowSettings(false)}>
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
+          <p className="chat-settings-desc">
+            Keys are stored locally in your browser and never sent to any server.
+          </p>
+
+          <div className="chat-settings-fields">
+            {/* K-BERDL Key */}
+            <div className="chat-settings-field">
+              <label className="chat-settings-label">
+                <i className="fa-solid fa-database" /> K-BERDL API Key
+                {kberdlKey && <span className="chat-key-saved-badge">Saved: {maskKey(kberdlKey)}</span>}
+              </label>
+              <div className="chat-key-input-wrap">
+                <input
+                  type={showKberdlKey ? "text" : "password"}
+                  className="chat-key-input"
+                  placeholder="Enter K-BERDL API key…"
+                  value={draftKberdl}
+                  onChange={(e) => setDraftKberdl(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button className="chat-key-toggle" onClick={() => setShowKberdlKey((s) => !s)} title={showKberdlKey ? "Hide" : "Show"}>
+                  <i className={`fa-solid ${showKberdlKey ? "fa-eye-slash" : "fa-eye"}`} />
+                </button>
+                {kberdlKey && (
+                  <button className="chat-key-clear" onClick={() => handleClearKey("kberdl")} title="Clear key">
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Claude Key */}
+            <div className="chat-settings-field">
+              <label className="chat-settings-label">
+                <i className="fa-solid fa-brain" /> Claude API Key
+                {claudeKey && <span className="chat-key-saved-badge">Saved: {maskKey(claudeKey)}</span>}
+              </label>
+              <div className="chat-key-input-wrap">
+                <input
+                  type={showClaudeKey ? "text" : "password"}
+                  className="chat-key-input"
+                  placeholder="Enter Claude API key (sk-ant-…)"
+                  value={draftClaude}
+                  onChange={(e) => setDraftClaude(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button className="chat-key-toggle" onClick={() => setShowClaudeKey((s) => !s)} title={showClaudeKey ? "Hide" : "Show"}>
+                  <i className={`fa-solid ${showClaudeKey ? "fa-eye-slash" : "fa-eye"}`} />
+                </button>
+                {claudeKey && (
+                  <button className="chat-key-clear" onClick={() => handleClearKey("claude")} title="Clear key">
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="chat-settings-actions">
+            <button className="chat-settings-save" onClick={handleSaveKeys}>
+              {savedFlash
+                ? <><i className="fa-solid fa-check" /> Saved!</>
+                : <><i className="fa-solid fa-floppy-disk" /> Save Configuration</>}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="chat-messages">
