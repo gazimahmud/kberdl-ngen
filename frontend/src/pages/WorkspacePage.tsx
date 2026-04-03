@@ -1240,6 +1240,8 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  agentId?: string;
+  timestamp?: string;
 }
 
 // ─────────────────────────── CoScientistChat ─────────────────────────
@@ -1447,6 +1449,78 @@ function MockChatDemo() {
   );
 }
 
+// ─────────────────────────── Message renderer ────────────────────────
+
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((p, i) => {
+    if (p.startsWith("**") && p.endsWith("**")) return <strong key={i}>{p.slice(2, -2)}</strong>;
+    if (p.startsWith("`") && p.endsWith("`")) return <code key={i} className="chat-inline-code">{p.slice(1, -1)}</code>;
+    return p;
+  });
+}
+
+function ChatCodeBlock({ code, lang = "SQL" }: { code: string; lang?: string }) {
+  const [copied, setCopied] = useState(false);
+  const doCopy = () => {
+    navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); });
+  };
+  return (
+    <div className="chat-code-block">
+      <div className="chat-code-header">
+        <span className="chat-code-lang"><i className="fa-solid fa-code" /> {lang}</span>
+        <button className="chat-code-copy" onClick={doCopy}>
+          {copied ? <><i className="fa-solid fa-check" /> Copied</> : <><i className="fa-regular fa-copy" /> Copy</>}
+        </button>
+      </div>
+      <pre className="chat-code-pre">{code.trim()}</pre>
+    </div>
+  );
+}
+
+function renderAssistantContent(text: string) {
+  if (!text) return null;
+  const blocks = text.split(/\n\n+/);
+  return (
+    <div className="chat-response-body">
+      {blocks.map((block, bi) => {
+        const lines = block.split("\n").filter(l => l.trim());
+        if (!lines.length) return null;
+
+        // SQL / code block
+        if (lines.some(l => /^\s*(SELECT|FROM|WHERE|JOIN|ORDER BY|LIMIT|GROUP BY|WITH)\b/i.test(l))) {
+          return <ChatCodeBlock key={bi} code={block} />;
+        }
+
+        // Bullet list
+        if (lines.every(l => l.trimStart().startsWith("•"))) {
+          return (
+            <ul key={bi} className="chat-bullet-list">
+              {lines.map((l, li) => {
+                const content = l.replace(/^\s*•\s*/, "");
+                const dash = content.indexOf(" — ");
+                if (dash !== -1) {
+                  return (
+                    <li key={li} className="chat-bullet-item">
+                      <span className="chat-bullet-term">{renderInline(content.slice(0, dash))}</span>
+                      <span className="chat-bullet-sep"> — </span>
+                      <span className="chat-bullet-desc">{renderInline(content.slice(dash + 3))}</span>
+                    </li>
+                  );
+                }
+                return <li key={li} className="chat-bullet-item">{renderInline(content)}</li>;
+              })}
+            </ul>
+          );
+        }
+
+        // Paragraph
+        return <p key={bi} className="chat-para">{renderInline(block)}</p>;
+      })}
+    </div>
+  );
+}
+
 function maskKey(key: string): string {
   if (!key) return "";
   if (key.length <= 8) return "•".repeat(key.length);
@@ -1508,13 +1582,14 @@ function CoScientistChat() {
     if (!input.trim() || streaming) return;
 
     const userText = input.trim();
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: userText }]);
+    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: userText, timestamp: now }]);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setStreaming(true);
 
     const assistantId = crypto.randomUUID();
-    setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+    setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "", agentId: selectedAgent, timestamp: now }]);
 
     await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
 
@@ -1679,21 +1754,49 @@ function CoScientistChat() {
           </div>
         ) : (
           <div className="chat-thread">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`chat-msg chat-msg--${msg.role}`}>
-                {msg.role === "assistant" && (
-                  <div className="chat-avatar">
-                    <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
-                  </div>
-                )}
-                <div className="chat-bubble">
-                  {msg.content}
-                  {streaming && msg.role === "assistant" && msg === messages[messages.length - 1] && (
-                    <span className="chat-cursor" />
+            {messages.map((msg) => {
+              const isLastAssistant = streaming && msg.role === "assistant" && msg === messages[messages.length - 1];
+              const agent = AGENTS.find(a => a.id === msg.agentId);
+              return (
+                <div key={msg.id} className={`chat-msg chat-msg--${msg.role}`}>
+                  {msg.role === "assistant" && (
+                    <div className="chat-avatar">
+                      <img src={`${import.meta.env.BASE_URL}kberdl-logo.png`} alt="" className="chat-avatar-img" />
+                    </div>
                   )}
+                  <div className="chat-bubble">
+                    {msg.role === "assistant" ? (
+                      <>
+                        <div className="chat-msg-meta">
+                          {agent && (
+                            <span className="chat-agent-chip">
+                              <i className={agent.icon} /> {agent.name}
+                            </span>
+                          )}
+                          {msg.timestamp && <span className="chat-msg-time">{msg.timestamp}</span>}
+                        </div>
+                        {isLastAssistant && !msg.content ? (
+                          <div className="chat-thinking-row">
+                            <span className="chat-thinking-dots"><span /><span /><span /></span>
+                            <span className="chat-thinking-label">Analyzing…</span>
+                          </div>
+                        ) : (
+                          <>
+                            {renderAssistantContent(msg.content)}
+                            {isLastAssistant && <span className="chat-cursor" />}
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="chat-user-text">{msg.content}</div>
+                        {msg.timestamp && <div className="chat-msg-time chat-msg-time--user">{msg.timestamp}</div>}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={bottomRef} />
           </div>
         )}
