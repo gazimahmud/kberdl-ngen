@@ -73,14 +73,20 @@ const MOCK_STATS: Record<string, { databases: number; tables: number; storage: s
   protect:              { databases: 4,  tables: 72,  storage: "1.2 TB",  access: "Read·Only"  },
 };
 
-function TenantCard({ tenant, onViewDictionary, onOpenConsole }: { tenant: string; onViewDictionary: () => void; onOpenConsole: () => void }) {
+function TenantCard({ tenant, onViewDictionary, onOpenConsole, isPinned, onTogglePin }: {
+  tenant: string;
+  onViewDictionary: () => void;
+  onOpenConsole: () => void;
+  isPinned: boolean;
+  onTogglePin: () => void;
+}) {
   const navigate = useNavigate();
   const color = TENANT_COLORS[tenant] ?? "#607d8b";
   const stats = MOCK_STATS[tenant] ?? { databases: "—", tables: "—", storage: "—", access: "Read·Only" };
   const isWrite = stats.access === "Read·Write";
 
   return (
-    <div className="tenant-card">
+    <div className={`tenant-card${isPinned ? " tenant-card--pinned" : ""}`}>
       <div className="tc-header">
         <div className="tc-avatar" style={{ background: color }}>
           {tenant[0].toUpperCase()}
@@ -94,6 +100,13 @@ function TenantCard({ tenant, onViewDictionary, onOpenConsole }: { tenant: strin
             {stats.access}
           </span>
         )}
+        <button
+          className={`tc-pin-btn${isPinned ? " tc-pin-btn--active" : ""}`}
+          onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
+          title={isPinned ? "Unpin tenant" : "Pin tenant"}
+        >
+          {isPinned ? "★" : "☆"}
+        </button>
       </div>
 
       <div className="tc-stats">
@@ -2484,6 +2497,20 @@ export default function WorkspacePage() {
   const [activeTab, setActiveTab]           = useState("tenants");
   const [activeDictionary, setActiveDictionary] = useState<string | null>(null);
   const [activeConsole,    setActiveConsole]    = useState<string | null>(null);
+  const [pinnedTenants, setPinnedTenants]   = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("kberdl_pinned_tenants") ?? "[]"); }
+    catch { return []; }
+  });
+
+  const togglePin = (tenant: string) => {
+    setPinnedTenants(prev => {
+      const next = prev.includes(tenant)
+        ? prev.filter(t => t !== tenant)
+        : [...prev, tenant];
+      localStorage.setItem("kberdl_pinned_tenants", JSON.stringify(next));
+      return next;
+    });
+  };
   const [showSettings,     setShowSettings]     = useState(false);
   const [searchParams] = useSearchParams();
 
@@ -2569,25 +2596,59 @@ export default function WorkspacePage() {
         />
       )}
 
-      {activeTab === "tenants" && !activeDictionary && !activeConsole && (
-        <>
-          <div className="workspace-header">
-            <p className="workspace-sub">
-              {tenants.length} tenant{tenants.length !== 1 ? "s" : ""} available
-            </p>
-          </div>
-          <div className="tenant-grid">
-            {tenants.map((t) => (
-              <TenantCard
-                key={t}
-                tenant={t}
-                onViewDictionary={() => setActiveDictionary(t)}
-                onOpenConsole={() => setActiveConsole(t)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      {activeTab === "tenants" && !activeDictionary && !activeConsole && (() => {
+        const pinned   = tenants.filter(t => pinnedTenants.includes(t));
+        const unpinned = tenants.filter(t => !pinnedTenants.includes(t));
+        return (
+          <>
+            <div className="workspace-header">
+              <p className="workspace-sub">
+                {tenants.length} tenant{tenants.length !== 1 ? "s" : ""} available
+                {pinned.length > 0 && <> · <span className="workspace-sub-pinned">★ {pinned.length} pinned</span></>}
+              </p>
+            </div>
+
+            {pinned.length > 0 && (
+              <>
+                <div className="tenant-section-header">
+                  <span className="tenant-section-star">★</span>
+                  Pinned Tenants
+                  <span className="tenant-section-count">{pinned.length}</span>
+                </div>
+                <div className="tenant-grid tenant-grid--pinned">
+                  {pinned.map(t => (
+                    <TenantCard
+                      key={t}
+                      tenant={t}
+                      isPinned={true}
+                      onTogglePin={() => togglePin(t)}
+                      onViewDictionary={() => setActiveDictionary(t)}
+                      onOpenConsole={() => setActiveConsole(t)}
+                    />
+                  ))}
+                </div>
+                <div className="tenant-section-header tenant-section-header--all">
+                  All Tenants
+                  <span className="tenant-section-count">{unpinned.length}</span>
+                </div>
+              </>
+            )}
+
+            <div className="tenant-grid">
+              {unpinned.map(t => (
+                <TenantCard
+                  key={t}
+                  tenant={t}
+                  isPinned={false}
+                  onTogglePin={() => togglePin(t)}
+                  onViewDictionary={() => setActiveDictionary(t)}
+                  onOpenConsole={() => setActiveConsole(t)}
+                />
+              ))}
+            </div>
+          </>
+        );
+      })()}
 
       {activeTab === "coscience" && <CoScientistChat />}
 
